@@ -53,7 +53,7 @@ spring:
       # 大小限制
       max-file-size: 10MB
 server:
-  address: 10.0.33.143
+  address: localhost
   port: 8101
   servlet:
     context-path: /api
@@ -83,7 +83,7 @@ wx:
       http-client-type: HttpClient
       key-prefix: wx
       redis:
-        host: 10.0.33.143
+        host: localhost
         port: 6379
       type: Memory
   # 微信开放平台

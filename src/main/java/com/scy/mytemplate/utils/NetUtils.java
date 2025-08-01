@@ -27,7 +27,7 @@ public class NetUtils {
         }
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
-            if (ip.equals("10.0.33.143")) {
+            if (ip.equals("localhost")) {
                 // 根据网卡取本机配置的 IP
                 InetAddress inet = null;
                 try {
@@ -47,7 +47,7 @@ public class NetUtils {
             }
         }
         if (ip == null) {
-            return "10.0.33.143";
+            return "localhost";
         }
         return ip;
     }
