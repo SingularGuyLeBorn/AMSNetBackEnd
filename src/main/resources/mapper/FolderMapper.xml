@@ -20,5 +20,24 @@
         ownerUserId,ownerOrganizationId,createTime,
         updateTime,isDelete
     </sql>
+
+    <select id="findVisibleFoldersForUser" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM
+        Folders
+        WHERE
+        isDelete = 0 AND (
+        -- 1. 所有公共文件夹
+        space = 'public'
+        -- 2. 用户自己的私有文件夹
+        OR (space = 'private' AND ownerUserId = #{userId})
+        -- 3. 用户所属组织的所有组织文件夹
+        OR (space = 'organization' AND ownerOrganizationId IN
+        (SELECT organizationId FROM OrganizationMembers WHERE userId = #{userId}))
+        )
+        ORDER BY
+        space, name
+    </select>
 </mapper>
         <!-- END OF FILE: src/main/resources/mapper/FolderMapper.xml -->
