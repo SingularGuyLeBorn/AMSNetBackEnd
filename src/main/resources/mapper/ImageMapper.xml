@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scy.mytemplate.mapper.ImageMapper">
+
+    <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Image">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="folderId" column="folderId" jdbcType="BIGINT"/>
+        <result property="originalFilename" column="originalFilename" jdbcType="VARCHAR"/>
+        <result property="storagePath" column="storagePath" jdbcType="VARCHAR"/>
+        <result property="width" column="width" jdbcType="INTEGER"/>
+        <result property="height" column="height" jdbcType="INTEGER"/>
+        <result property="fileSize" column="fileSize" jdbcType="BIGINT"/>
+        <result property="uploaderId" column="uploaderId" jdbcType="BIGINT"/>
+        <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+        <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,folderId,originalFilename,
+        storagePath,width,height,
+        fileSize,uploaderId,createTime,isDelete
+    </sql>
+
+    <select id="findByStoragePath" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from Images
+        where storagePath = #{storagePath} AND isDelete = 0
+    </select>
+</mapper>
+        <!-- END OF FILE: src/main/resources/mapper/ImageMapper.xml -->

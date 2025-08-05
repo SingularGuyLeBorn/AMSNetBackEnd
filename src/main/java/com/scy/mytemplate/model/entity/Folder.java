@@ -1,4 +1,4 @@
-// FILE: src/main/java/com/scy/mytemplate/model/entity/User.java
+// FILE: src/main/java/com/scy/mytemplate/model/entity/Folder.java
 package com.scy.mytemplate.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -11,60 +11,40 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 用户实体类。
- * 与数据库 `user` 表严格对应。
+ * 文件夹/工作区实体类。
+ * 与数据库 `Folders` 表严格对应。
  *
  * @author Bedrock
  */
-@TableName(value = "user")
+@TableName(value = "Folders")
 @Data
-public class User implements Serializable {
+public class Folder implements Serializable {
 
     /**
      * 主键ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 账号
+     * 文件夹名称
      */
-    private String userAccount;
+    private String name;
 
     /**
-     * 密码
+     * 空间类型: 'public', 'private', 'organization'
      */
-    private String userPassword;
+    private String space;
 
     /**
-     * 微信开放平台id
+     * 私有文件夹的拥有者用户ID (当 space="private" 时)
      */
-    private String unionId;
+    private Long ownerUserId;
 
     /**
-     * 公众号openId
+     * 组织文件夹的拥有者组织ID (当 space="organization" 时)
      */
-    private String mpOpenId;
-
-    /**
-     * 用户昵称
-     */
-    private String userName;
-
-    /**
-     * 用户头像
-     */
-    private String userAvatar;
-
-    /**
-     * 用户简介
-     */
-    private String userProfile;
-
-    /**
-     * 用户角色：user/admin/ban
-     */
-    private String userRole;
+    private Long ownerOrganizationId;
 
     /**
      * 创建时间
@@ -77,7 +57,7 @@ public class User implements Serializable {
     private Date updateTime;
 
     /**
-     * 是否删除
+     * 是否删除 (逻辑删除标志)
      */
     @TableLogic
     private Integer isDelete;
@@ -85,4 +65,4 @@ public class User implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }
-// END OF FILE: src/main/java/com/scy/mytemplate/model/entity/User.java
+// END OF FILE: src/main/java/com/scy/mytemplate/model/entity/Folder.java

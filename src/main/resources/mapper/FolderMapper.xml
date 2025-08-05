@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scy.mytemplate.mapper.FolderMapper">
+
+    <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Folder">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="space" column="space" jdbcType="VARCHAR"/>
+        <result property="ownerUserId" column="ownerUserId" jdbcType="BIGINT"/>
+        <result property="ownerOrganizationId" column="ownerOrganizationId" jdbcType="BIGINT"/>
+        <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+        <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,name,space,
+        ownerUserId,ownerOrganizationId,createTime,
+        updateTime,isDelete
+    </sql>
+</mapper>
+        <!-- END OF FILE: src/main/resources/mapper/FolderMapper.xml -->

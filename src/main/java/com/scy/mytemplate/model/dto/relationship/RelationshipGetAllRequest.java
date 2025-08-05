@@ -1,16 +1,18 @@
+// FILE: src/main/java/com/scy/mytemplate/model/dto/relationship/RelationshipGetAllRequest.java
 package com.scy.mytemplate.model.dto.relationship;
 
 import lombok.Data;
+import java.io.Serializable;
 
 /**
- * 用于封装节点创建请求的参数对象。
- * 该类提供了一种结构化的方式来传递节点创建所需的信息，包括节点名称和节点属性。
+ * 获取当前用户可见的所有关系的请求体。
+ * 目前为空，为将来可能添加的筛选、分页等参数预留扩展空间。
  */
 @Data
-public class RelationshipGetAllRequest {
+public class RelationshipGetAllRequest implements Serializable {
 
-    /**
-     * 是否包含属性
-     */
-    boolean isIncludeProperties;
+    // 例如: private String filterByType;
+
+    private static final long serialVersionUID = 1L;
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/model/dto/relationship/RelationshipGetAllRequest.java

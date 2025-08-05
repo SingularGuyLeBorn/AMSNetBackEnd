@@ -1,21 +1,36 @@
+// FILE: src/main/java/com/scy/mytemplate/model/vo/RelationshipVO.java
 package com.scy.mytemplate.model.vo;
 
 import lombok.Data;
-
+import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * 关系视图对象 (Relationship View Object)。
+ * 作为数据传输层，用于向前端安全地返回关系的完整信息。
+ */
 @Data
-public class RelationshipVO {
+public class RelationshipVO implements Serializable {
     /**
-     * 关系的名称，用于标识关系的类型。
-     * 在知识图谱中，关系名称确定了节点之间的连接类型，例如“父子关系”、“朋友关系”等。
+     * 关系的类型或名称，例如 "SIMILAR_DESIGN"。
      */
     private String name;
 
     /**
-     * 关系的属性集合，以键值对的形式存储。
-     * 这些属性用于描述关系的各种特征，例如关系的权重、方向等。
-     * 键为属性的名称，值为属性对应的值，可以是各种数据类型（如字符串、数字、布尔值等），具体取决于知识图谱的定义和应用场景。
+     * 关系的起始节点的唯一名称。
+     */
+    private String fromNode;
+
+    /**
+     * 关系的结束节点的唯一名称。
+     */
+    private String toNode;
+
+    /**
+     * 关系自身的属性集合。
      */
     private Map<String, Object> properties;
+
+    private static final long serialVersionUID = 1L;
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/model/vo/RelationshipVO.java

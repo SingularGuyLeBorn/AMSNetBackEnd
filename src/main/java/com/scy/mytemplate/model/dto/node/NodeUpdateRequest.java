@@ -1,26 +1,34 @@
+// FILE: src/main/java/com/scy/mytemplate/model/dto/node/NodeUpdateRequest.java
 package com.scy.mytemplate.model.dto.node;
 
 import lombok.Data;
-
+import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 用于封装节点创建请求的参数对象。
- * 该类提供了一种结构化的方式来传递节点创建所需的信息，包括节点名称和节点属性。
+ * 更新节点的请求体。
+ * 提供了强大的更新能力，可以同时添加/修改属性，以及移除指定属性。
  */
 @Data
-public class NodeUpdateRequest {
-
+public class NodeUpdateRequest implements Serializable {
     /**
-     * 节点的名称，用于唯一标识一个节点。
-     * 在知识图谱中，节点名称是节点的重要标识，通过它可以在图谱中定位和识别特定节点。
+     * 要更新的节点的唯一名称。
      */
     private String name;
 
     /**
-     * 节点的属性集合，以键值对的形式存储。
-     * 这些属性用于描述节点的各种特征，例如节点的类型、相关数据等。
-     * 键为属性的名称，值为属性对应的值，可以是各种数据类型（如字符串、数字、布尔值等），具体取决于知识图谱的定义和应用场景。
+     * 要添加或更新的属性集合。
+     * 如果属性键已存在，则更新其值；如果不存在，则添加新属性。
      */
-    private Map<String, Object> properties;
+    private Map<String, Object> propertiesToSet;
+
+    /**
+     * 要移除的属性的键（Key）列表。
+     * 后端将根据这个列表中的字符串来移除节点对应的属性。
+     */
+    private List<String> propertiesToRemove;
+
+    private static final long serialVersionUID = 1L;
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/model/dto/node/NodeUpdateRequest.java

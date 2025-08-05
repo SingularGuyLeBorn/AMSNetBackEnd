@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scy.mytemplate.mapper.OrganizationMemberMapper">
+
+    <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.OrganizationMember">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="organizationId" column="organizationId" jdbcType="BIGINT"/>
+        <result property="userId" column="userId" jdbcType="BIGINT"/>
+        <result property="roleInOrg" column="roleInOrg" jdbcType="VARCHAR"/>
+        <result property="joinTime" column="joinTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,organizationId,userId,
+        roleInOrg,joinTime
+    </sql>
+
+    <select id="findUserRoleInOrg" resultType="java.lang.String">
+        select roleInOrg
+        from OrganizationMembers
+        where userId = #{userId} AND organizationId = #{organizationId}
+    </select>
+
+    <select id="findUserOrganizationIds" resultType="java.lang.Long">
+        select organizationId
+        from OrganizationMembers
+        where userId = #{userId}
+    </select>
+</mapper>
+        <!-- END OF FILE: src/main/resources/mapper/OrganizationMemberMapper.xml -->

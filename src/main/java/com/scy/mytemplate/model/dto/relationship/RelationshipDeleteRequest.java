@@ -1,25 +1,30 @@
+// FILE: src/main/java/com/scy/mytemplate/model/dto/relationship/RelationshipDeleteRequest.java
 package com.scy.mytemplate.model.dto.relationship;
 
 import lombok.Data;
-
-import java.util.Map;
+import java.io.Serializable;
 
 /**
- * 用于封装关系创建请求的参数对象。
- * 该类提供了一种结构化的方式来传递关系创建所需的信息，包括关系名称和关系属性。
+ * 删除关系的请求体。
+ * 通过起始节点、结束节点和关系类型来唯一确定一条关系。
  */
 @Data
-public class RelationshipDeleteRequest {
+public class RelationshipDeleteRequest implements Serializable {
     /**
-     * 关系的名称，用于标识关系的类型。
-     * 在知识图谱中，关系名称确定了节点之间的连接类型，例如“父子关系”、“朋友关系”等。
+     * 关系的类型/名称。
      */
     private String name;
 
     /**
-     * 关系的属性集合，以键值对的形式存储。
-     * 这些属性用于描述关系的各种特征，例如关系的权重、方向等。
-     * 键为属性的名称，值为属性对应的值，可以是各种数据类型（如字符串、数字、布尔值等），具体取决于知识图谱的定义和应用场景。
+     * 起始节点的唯一名称。
      */
-    private Map<String, Object> properties;
+    private String fromNode;
+
+    /**
+     * 结束节点的唯一名称。
+     */
+    private String toNode;
+
+    private static final long serialVersionUID = 1L;
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/model/dto/relationship/RelationshipDeleteRequest.java

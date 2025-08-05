@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scy.mytemplate.mapper.OrganizationMapper">
+
+    <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Organization">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="ownerId" column="ownerId" jdbcType="BIGINT"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+        <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,name,ownerId,
+        description,createTime,updateTime,isDelete
+    </sql>
+
+    <select id="findUserOrganizationsByUserId" resultType="com.scy.mytemplate.model.vo.UserOrganizationInfoVO">
+        SELECT
+            org.id AS organizationId,
+            org.name AS organizationName,
+            mem.roleInOrg AS roleInOrg
+        FROM
+            Organizations org
+                JOIN
+            OrganizationMembers mem ON org.id = mem.organizationId
+        WHERE
+            mem.userId = #{userId}
+          AND org.isDelete = 0
+    </select>
+</mapper>
+        <!-- END OF FILE: src/main/resources/mapper/OrganizationMapper.xml -->

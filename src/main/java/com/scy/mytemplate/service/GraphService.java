@@ -1,83 +1,39 @@
+// FILE: src/main/java/com/scy/mytemplate/service/GraphService.java
 package com.scy.mytemplate.service;
 
+import com.scy.mytemplate.model.dto.node.*;
+import com.scy.mytemplate.model.dto.relationship.*;
+import com.scy.mytemplate.model.entity.User;
 import com.scy.mytemplate.model.vo.NodeVO;
 import com.scy.mytemplate.model.vo.RelationshipVO;
-
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 统一的图服务接口。
+ * 定义了对知识图谱中节点和关系的所有操作，并集成了权限校验。
+ *
+ * @author Bedrock
+ */
 public interface GraphService {
-    /**
-     * 创建节点（根据节点名称和属性）
-     * @param name 节点名称
-     * @param properties 节点属性
-     * @return
-     */
-    String createNode(String name, Map<String, Object> properties);
 
-    /**
-     * 删除节点（根据节点名称）
-     * @param name 节点名称
-     * @return
-     */
-    String deleteNode(String name);
+    // region 节点操作 (Node Operations)
 
-    /**
-     * 更新节点（根据节点名称和新属性）
-     * @param name 节点名称
-     * @param newProperties 新属性
-     * @return
-     */
-    String updateNode(String name, Map<String, Object> newProperties);
+    String createNode(NodeCreateRequest request, User currentUser);
+    String deleteNode(NodeDeleteRequest request, User currentUser);
+    String updateNode(NodeUpdateRequest request, User currentUser);
+    NodeVO findNode(NodeQueryRequest request, User currentUser);
+    List<NodeVO> getAllNodesForCurrentUser(NodeGetAllRequest request, User currentUser);
 
-    /**
-     * 查询节点（根据节点名称）
-     * @param name
-     * @return
-     */
-    NodeVO findNode(String name);
+    // endregion
 
-    /**
-     * 创建关系（根据节点名称和关系属性）
-     * @param name 关系名称
-     * @param properties 关系属性
-     * @return
-     */
-    String createRelationship(String name, Map<String, Object> properties);
+    // region 关系操作 (Relationship Operations)
 
-    /**
-     * 删除关系（根据关系名称）
-     * @param name
-     * @return
-     */
-    String deleteRelationship(String name);
+    String createRelationship(RelationshipCreateRequest request, User currentUser);
+    String deleteRelationship(RelationshipDeleteRequest request, User currentUser);
+    String updateRelationship(RelationshipUpdateRequest request, User currentUser);
+    RelationshipVO findRelationship(RelationshipQueryRequest request, User currentUser);
+    List<RelationshipVO> getAllRelationshipsForCurrentUser(RelationshipGetAllRequest request, User currentUser);
 
-    /**
-     * 更新关系（根据关系名称和新属性）
-     * @param name
-     * @param newProperties
-     * @return
-     */
-    String updateRelationship(String name, Map<String, Object> newProperties);
-
-    /**
-     * 查询关系（根据关系名称）
-     * @param name
-     * @return
-     */
-    RelationshipVO findRelationship(String name);
-
-    /**
-     * 获取全部节点
-     * @param isIncludeProperties
-     * @return
-     */
-    List<NodeVO> getAllNodes(boolean isIncludeProperties);
-
-    /**
-     *获取全部关系
-     * @param isIncludeProperties
-     * @return
-     */
-    List<RelationshipVO> getAllRelationships(boolean isIncludeProperties);
+    // endregion
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/service/GraphService.java

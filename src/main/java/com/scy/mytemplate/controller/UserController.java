@@ -1,3 +1,4 @@
+// FILE: src/main/java/com/scy/mytemplate/controller/UserController.java
 package com.scy.mytemplate.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,7 +12,6 @@ import com.scy.mytemplate.model.entity.User;
 import com.scy.mytemplate.model.vo.LoginUserVO;
 import com.scy.mytemplate.model.vo.UserVO;
 import com.scy.mytemplate.service.UserService;
-import com.scy.mytemplate.service.impl.UserServiceImpl;
 import com.scy.mytemplate.annotation.AuthCheck;
 import com.scy.mytemplate.exception.BusinessException;
 import com.scy.mytemplate.exception.ThrowUtils;
@@ -33,7 +33,6 @@ import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
 import me.chanjar.weixin.mp.api.WxMpService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,10 +41,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 用户接口
+ * 用户接口 (重构后)。
+ * 负责处理所有与用户相关的 HTTP 请求，包括注册、登录、注销、以及管理员对用户的管理操作。
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * @author Bedrock
  */
 @RestController
 @RequestMapping("/user")
@@ -58,13 +57,13 @@ public class UserController {
     @Resource
     private WxOpenConfig wxOpenConfig;
 
-    // region 登录相关
+    // region 登录与会话管理 (Login & Session Management)
 
     /**
-     * 用户注册
+     * 用户注册接口。
      *
-     * @param userRegisterRequest
-     * @return
+     * @param userRegisterRequest 包含账号、密码和校验密码的请求体。
+     * @return 包含新用户ID的响应。
      */
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
@@ -75,18 +74,18 @@ public class UserController {
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不完整");
         }
         long result = userService.userRegister(userAccount, userPassword, checkPassword);
         return ResultUtils.success(result);
     }
 
     /**
-     * 用户登录
+     * 用户登录接口。
      *
-     * @param userLoginRequest
-     * @param request
-     * @return
+     * @param userLoginRequest 包含账号和密码的请求体。
+     * @param request          HTTP请求，用于设置Session。
+     * @return 包含用户详细信息（包括组织列表）的 LoginUserVO 响应。
      */
     @PostMapping("/login")
     public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
@@ -103,33 +102,36 @@ public class UserController {
     }
 
     /**
-     * 用户登录（微信开放平台）
+     * 通过微信开放平台进行用户登录。
+     *
+     * @param request  HTTP请求
+     * @param response HTTP响应
+     * @param code     微信授权码
+     * @return 包含用户详细信息的 LoginUserVO 响应。
      */
     @GetMapping("/login/wx_open")
     public BaseResponse<LoginUserVO> userLoginByWxOpen(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("code") String code) {
-        WxOAuth2AccessToken accessToken;
+                                                       @RequestParam("code") String code) {
         try {
             WxMpService wxService = wxOpenConfig.getWxMpService();
-            accessToken = wxService.getOAuth2Service().getAccessToken(code);
+            WxOAuth2AccessToken accessToken = wxService.getOAuth2Service().getAccessToken(code);
             WxOAuth2UserInfo userInfo = wxService.getOAuth2Service().getUserInfo(accessToken, code);
             String unionId = userInfo.getUnionId();
-            String mpOpenId = userInfo.getOpenid();
-            if (StringUtils.isAnyBlank(unionId, mpOpenId)) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "登录失败，系统错误");
+            if (StringUtils.isBlank(unionId)) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "微信登录失败，无法获取 UnionID");
             }
             return ResultUtils.success(userService.userLoginByMpOpen(userInfo, request));
         } catch (Exception e) {
             log.error("userLoginByWxOpen error", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "登录失败，系统错误");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "微信登录失败，系统错误");
         }
     }
 
     /**
-     * 用户注销
+     * 用户注销接口。
      *
-     * @param request
-     * @return
+     * @param request HTTP请求，用于清除Session。
+     * @return 包含操作成功布尔值的响应。
      */
     @PostMapping("/logout")
     public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
@@ -141,10 +143,10 @@ public class UserController {
     }
 
     /**
-     * 获取当前登录用户
+     * 获取当前登录用户信息接口。
      *
-     * @param request
-     * @return
+     * @param request HTTP请求，用于获取Session中的用户。
+     * @return 包含当前用户详细信息的 LoginUserVO 响应。
      */
     @GetMapping("/get/login")
     public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
@@ -154,60 +156,54 @@ public class UserController {
 
     // endregion
 
-    // region 增删改查
+    // region 管理员用 - 用户管理 (Admin Only - User Management)
 
     /**
-     * 创建用户
+     * (管理员) 创建新用户。
      *
-     * @param userAddRequest
-     * @param request
-     * @return
+     * @param userAddRequest 包含新用户信息（除密码外）的请求体。
+     * @return 包含新用户ID的响应。
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest, HttpServletRequest request) {
+    public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
         if (userAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = new User();
         BeanUtils.copyProperties(userAddRequest, user);
-        // 默认密码 12345678
-        String defaultPassword = "12345678";
-        String encryptPassword = DigestUtils.md5DigestAsHex((UserServiceImpl.SALT + defaultPassword).getBytes());
-        user.setUserPassword(encryptPassword);
         boolean result = userService.save(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(user.getId());
     }
 
     /**
-     * 删除用户
+     * (管理员) 删除用户。
      *
-     * @param deleteRequest
-     * @param request
-     * @return
+     * @param deleteRequest 包含要删除用户ID的请求体。
+     * @return 包含操作成功布尔值的响应。
      */
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        // 基石建议: 直接物理删除用户是危险操作，可能因外键约束失败。
+        // 生产环境中，应在 Service 层实现一个更安全的业务删除方法（如先处理关联数据）。
         boolean b = userService.removeById(deleteRequest.getId());
         return ResultUtils.success(b);
     }
 
     /**
-     * 更新用户
+     * (管理员) 更新用户信息。
      *
-     * @param userUpdateRequest
-     * @param request
-     * @return
+     * @param userUpdateRequest 包含用户ID和要更新字段的请求体。
+     * @return 包含操作成功布尔值的响应。
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest,
-            HttpServletRequest request) {
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -219,71 +215,37 @@ public class UserController {
     }
 
     /**
-     * 根据 id 获取用户（仅管理员）
+     * (管理员) 根据ID获取用户公开信息。
      *
-     * @param id
-     * @param request
-     * @return
+     * @param id 用户ID。
+     * @return 包含用户公开信息的 UserVO 响应。
      */
-    @GetMapping("/get")
+    @GetMapping("/get/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<User> getUserById(long id, HttpServletRequest request) {
+    public BaseResponse<UserVO> getUserVOById(long id) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = userService.getById(id);
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(user);
-    }
-
-    /**
-     * 根据 id 获取包装类
-     *
-     * @param id
-     * @param request
-     * @return
-     */
-    @GetMapping("/get/vo")
-    public BaseResponse<UserVO> getUserVOById(long id, HttpServletRequest request) {
-        BaseResponse<User> response = getUserById(id, request);
-        User user = response.getData();
         return ResultUtils.success(userService.getUserVO(user));
     }
 
     /**
-     * 分页获取用户列表（仅管理员）
+     * (管理员) 分页获取用户封装列表。
      *
-     * @param userQueryRequest
-     * @param request
-     * @return
-     */
-    @PostMapping("/list/page")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Page<User>> listUserByPage(@RequestBody UserQueryRequest userQueryRequest,
-            HttpServletRequest request) {
-        long current = userQueryRequest.getCurrent();
-        long size = userQueryRequest.getPageSize();
-        Page<User> userPage = userService.page(new Page<>(current, size),
-                userService.getQueryWrapper(userQueryRequest));
-        return ResultUtils.success(userPage);
-    }
-
-    /**
-     * 分页获取用户封装列表
-     *
-     * @param userQueryRequest
-     * @param request
-     * @return
+     * @param userQueryRequest 包含分页和筛选条件的请求体。
+     * @return 分页的用户信息列表 (UserVO)。
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest,
-            HttpServletRequest request) {
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
-        // 限制爬虫
+        // 防爬虫保护
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<User> userPage = userService.page(new Page<>(current, size),
                 userService.getQueryWrapper(userQueryRequest));
@@ -296,15 +258,15 @@ public class UserController {
     // endregion
 
     /**
-     * 更新个人信息
+     * 用户更新自己的个人信息。
      *
-     * @param userUpdateMyRequest
-     * @param request
-     * @return
+     * @param userUpdateMyRequest 包含要更新的个人信息的请求体。
+     * @param request             HTTP请求，用于获取当前登录用户。
+     * @return 包含操作成功布尔值的响应。
      */
     @PostMapping("/update/my")
     public BaseResponse<Boolean> updateMyUser(@RequestBody UserUpdateMyRequest userUpdateMyRequest,
-            HttpServletRequest request) {
+                                              HttpServletRequest request) {
         if (userUpdateMyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -317,3 +279,4 @@ public class UserController {
         return ResultUtils.success(true);
     }
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/controller/UserController.java
