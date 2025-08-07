@@ -21,6 +21,17 @@ spring:
     # 30 天过期
     timeout: 2592000
 
+  # ===================================================================
+  # 【核心修正】新增静态资源映射配置
+  # ===================================================================
+  web:
+    resources:
+      # 这个属性告诉 Spring Boot 在哪里寻找静态文件。
+      # 它会将这个目录下的所有内容映射到应用的根路径下。
+      # 例如: C:/.../uploads/user/abc.png -> URL: /api/user/abc.png
+      # "file:" 前缀表示这是一个本地文件系统路径，末尾的 "/" 很重要。
+      static-locations: file:C:/WorkFiles/EIT/AMSNet/LocalFiles/to/uploads/
+
   # neo4j 配置
   neo4j:
     uri: bolt://111.229.103.50:7687
@@ -115,7 +126,7 @@ knife4j:
           - com.scy.mytemplate.controller
 
 # ===================================================================
-# 基石协议: 文件上传配置 (Bedrock Protocol: File Upload Configuration)
+# 【保留】此配置块依然需要，用于告诉 Java 代码将文件保存到哪里
 # ===================================================================
 file:
   # 文件上传的根目录。
@@ -123,4 +134,3 @@ file:
   # 在 Linux/macOS 上，路径应为 '/path/to/uploads'。
   # Spring Boot 启动时会检查此目录是否存在，如果不存在会自动创建。
   upload-dir: 'C:/WorkFiles/EIT/AMSNet/LocalFiles/to/uploads' # 请根据您的服务器环境修改此路径
-# END OF FILE: src/main/resources/application.yml

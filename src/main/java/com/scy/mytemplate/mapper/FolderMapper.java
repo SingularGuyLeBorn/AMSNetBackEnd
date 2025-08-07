@@ -21,7 +21,7 @@ public interface FolderMapper extends BaseMapper<Folder> {
      * @param userId 当前用户ID
      * @return 可见文件夹的实体列表
      */
-    List<Folder> findVisibleFoldersForUser(@Param("userId") Long userId);
+    List<Folder> findVisibleFoldersForUser(@Param("userId") String userId);
 
 }
 // END OF FILE: src/main/java/com/scy/mytemplate/mapper/FolderMapper.java

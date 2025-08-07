@@ -32,7 +32,7 @@ public interface AnnotationService extends IService<Annotation> {
      * @param currentUser 当前操作的用户。
      * @return 标注数据的视图对象，如果不存在则返回 null。
      */
-    AnnotationVO getAnnotationByImageId(Long imageId, User currentUser);
+    AnnotationVO getAnnotationByImageId(String imageId, User currentUser);
 
     /**
      * 更新一个已存在的标注数据。
@@ -49,6 +49,6 @@ public interface AnnotationService extends IService<Annotation> {
      * @param annotationId 要删除的标注记录ID。
      * @param currentUser  当前操作的用户。
      */
-    void deleteAnnotation(Long annotationId, User currentUser);
+    void deleteAnnotation(String annotationId, User currentUser);
 }
 // END OF FILE: src/main/java/com/scy/mytemplate/service/AnnotationService.java

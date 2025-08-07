@@ -23,7 +23,7 @@ public interface PostFavourService extends IService<PostFavour> {
      * @param loginUser
      * @return
      */
-    int doPostFavour(long postId, User loginUser);
+    int doPostFavour(String postId, User loginUser);
 
     /**
      * 分页获取用户收藏的帖子列表
@@ -34,7 +34,7 @@ public interface PostFavourService extends IService<PostFavour> {
      * @return
      */
     Page<Post> listFavourPostByPage(IPage<Post> page, Wrapper<Post> queryWrapper,
-            long favourUserId);
+            String favourUserId);
 
     /**
      * 帖子收藏（内部服务）
@@ -43,5 +43,5 @@ public interface PostFavourService extends IService<PostFavour> {
      * @param postId
      * @return
      */
-    int doPostFavourInner(long userId, long postId);
+    int doPostFavourInner(String userId, String postId);
 }

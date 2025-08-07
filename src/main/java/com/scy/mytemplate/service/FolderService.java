@@ -32,7 +32,7 @@ public interface FolderService extends IService<Folder> {
      * @param folderId    要删除的文件夹ID。
      * @param currentUser 当前操作的用户。
      */
-    void deleteFolder(Long folderId, User currentUser);
+    void deleteFolder(String folderId, User currentUser);
 
     /**
      * 更新文件夹名称。

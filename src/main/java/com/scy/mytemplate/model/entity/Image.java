@@ -23,13 +23,13 @@ public class Image implements Serializable {
     /**
      * 主键ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 所属文件夹ID
      */
-    private Long folderId;
+    private String folderId;
 
     /**
      * 原始文件名
@@ -59,7 +59,7 @@ public class Image implements Serializable {
     /**
      * 上传者用户ID
      */
-    private Long uploaderId;
+    private String uploaderId;
 
     /**
      * 创建时间

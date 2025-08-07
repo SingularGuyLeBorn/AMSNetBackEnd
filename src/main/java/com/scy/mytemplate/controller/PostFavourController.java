@@ -54,12 +54,12 @@ public class PostFavourController {
     @PostMapping("/")
     public BaseResponse<Integer> doPostFavour(@RequestBody PostFavourAddRequest postFavourAddRequest,
                                               HttpServletRequest request) {
-        if (postFavourAddRequest == null || postFavourAddRequest.getPostId() <= 0) {
+        if (postFavourAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         // 登录才能操作
         final User loginUser = userService.getLoginUser(request);
-        long postId = postFavourAddRequest.getPostId();
+        String postId = postFavourAddRequest.getPostId();
         int result = postFavourService.doPostFavour(postId, loginUser);
         return ResultUtils.success(result);
     }
@@ -100,7 +100,7 @@ public class PostFavourController {
         }
         long current = postFavourQueryRequest.getCurrent();
         long size = postFavourQueryRequest.getPageSize();
-        Long userId = postFavourQueryRequest.getUserId();
+        String userId = postFavourQueryRequest.getUserId();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20 || userId == null, ErrorCode.PARAMS_ERROR);
         Page<Post> postPage = postFavourService.listFavourPostByPage(new Page<>(current, size),

@@ -23,8 +23,8 @@ public class Folder implements Serializable {
     /**
      * 主键ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 文件夹名称
@@ -39,12 +39,12 @@ public class Folder implements Serializable {
     /**
      * 私有文件夹的拥有者用户ID (当 space="private" 时)
      */
-    private Long ownerUserId;
+    private String ownerUserId;
 
     /**
      * 组织文件夹的拥有者组织ID (当 space="organization" 时)
      */
-    private Long ownerOrganizationId;
+    private String ownerOrganizationId;
 
     /**
      * 创建时间

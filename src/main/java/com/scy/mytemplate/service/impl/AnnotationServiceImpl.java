@@ -46,7 +46,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
 
     @Override
     public AnnotationVO createAnnotation(AnnotationCreateRequest request, User currentUser) {
-        Long imageId = request.getImageId();
+        String imageId = request.getImageId();
         Image image = imageMapper.selectById(imageId);
         if (image == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "关联的图片不存在");
@@ -76,7 +76,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     }
 
     @Override
-    public AnnotationVO getAnnotationByImageId(Long imageId, User currentUser) {
+    public AnnotationVO getAnnotationByImageId(String imageId, User currentUser) {
         Image image = imageMapper.selectById(imageId);
         if (image == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "关联的图片不存在");
@@ -93,7 +93,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
 
     @Override
     public AnnotationVO updateAnnotation(AnnotationUpdateRequest request, User currentUser) {
-        Long annotationId = request.getAnnotationId();
+        String annotationId = request.getAnnotationId();
         Annotation annotation = this.getById(annotationId);
         if (annotation == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "要更新的标注记录不存在");
@@ -119,7 +119,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     }
 
     @Override
-    public void deleteAnnotation(Long annotationId, User currentUser) {
+    public void deleteAnnotation(String annotationId, User currentUser) {
         Annotation annotation = this.getById(annotationId);
         if (annotation == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "要删除的标注记录不存在");

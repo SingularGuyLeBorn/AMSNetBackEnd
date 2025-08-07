@@ -16,7 +16,7 @@ public class AnnotationCreateRequest implements Serializable {
     /**
      * 标注将要关联的图片ID。
      */
-    private Long imageId;
+    private String imageId;
 
     /**
      * 初始的标注内容 (JSON 对象)。

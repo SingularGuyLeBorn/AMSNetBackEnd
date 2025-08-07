@@ -71,7 +71,7 @@ public class PermissionServiceImpl implements PermissionService {
                 }
                 break;
             case "organization":
-                Long orgId = folder.getOwnerOrganizationId();
+                String orgId = folder.getOwnerOrganizationId();
                 String roleInOrg = memberMapper.findUserRoleInOrg(user.getId(), orgId);
                 if (roleInOrg == null) {
                     throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您不属于该组织，无权访问");

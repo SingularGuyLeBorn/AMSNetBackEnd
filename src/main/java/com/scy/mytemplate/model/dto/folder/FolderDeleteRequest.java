@@ -15,7 +15,7 @@ public class FolderDeleteRequest implements Serializable {
     /**
      * 要删除的文件夹的ID。
      */
-    private Long folderId;
+    private String folderId;
 
     private static final long serialVersionUID = 1L;
 }

@@ -23,8 +23,8 @@ public class Organization implements Serializable {
     /**
      * 组织ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 组织名称
@@ -34,7 +34,7 @@ public class Organization implements Serializable {
     /**
      * 组织创建者/拥有者ID
      */
-    private Long ownerId;
+    private String ownerId;
 
     /**
      * 组织简介

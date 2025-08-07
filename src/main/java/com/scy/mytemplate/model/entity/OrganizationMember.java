@@ -22,18 +22,18 @@ public class OrganizationMember implements Serializable {
     /**
      * 主键ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 组织ID
      */
-    private Long organizationId;
+    private String organizationId;
 
     /**
      * 用户ID
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 成员在组织内的角色: 'admin', 'member'

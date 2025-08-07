@@ -5,28 +5,32 @@
 <mapper namespace="com.scy.mytemplate.mapper.OrganizationMemberMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.OrganizationMember">
-        <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="organizationId" column="organizationId" jdbcType="BIGINT"/>
-        <result property="userId" column="userId" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="organizationId" column="organizationId" jdbcType="VARCHAR"/>
+        <result property="userId" column="userId" jdbcType="VARCHAR"/>
         <result property="roleInOrg" column="roleInOrg" jdbcType="VARCHAR"/>
         <result property="joinTime" column="joinTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <sql id="Base_Column_List">
-        id,organizationId,userId,
-        roleInOrg,joinTime
-    </sql>
-
     <select id="findUserRoleInOrg" resultType="java.lang.String">
-        select roleInOrg
-        from OrganizationMembers
-        where userId = #{userId} AND organizationId = #{organizationId}
+        SELECT roleInOrg FROM OrganizationMembers WHERE userId = #{userId,jdbcType=VARCHAR} AND organizationId = #{organizationId,jdbcType=VARCHAR}
     </select>
 
-    <select id="findUserOrganizationIds" resultType="java.lang.Long">
-        select organizationId
-        from OrganizationMembers
-        where userId = #{userId}
+    <!-- 【核心修正】resultType 从 Long 改为 String -->
+    <select id="findUserOrganizationIds" resultType="java.lang.String">
+        SELECT organizationId FROM OrganizationMembers WHERE userId = #{userId,jdbcType=VARCHAR}
     </select>
+
+    <select id="findUsersInOrganization" resultType="com.scy.mytemplate.model.entity.User">
+        SELECT
+            u.*
+        FROM
+            user u
+                JOIN
+            OrganizationMembers om ON u.id = om.userId
+        WHERE
+            om.organizationId = #{organizationId,jdbcType=VARCHAR}
+          AND u.isDelete = 0
+    </select>
+
 </mapper>
-        <!-- END OF FILE: src/main/resources/mapper/OrganizationMemberMapper.xml -->

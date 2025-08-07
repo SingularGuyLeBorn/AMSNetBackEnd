@@ -15,7 +15,7 @@ public class AnnotationDeleteRequest implements Serializable {
     /**
      * 要删除的标注记录的主键ID。
      */
-    private Long annotationId;
+    private String annotationId;
 
     private static final long serialVersionUID = 1L;
 }

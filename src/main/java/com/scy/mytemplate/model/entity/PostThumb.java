@@ -21,18 +21,18 @@ public class PostThumb implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 帖子 id
      */
-    private Long postId;
+    private String postId;
 
     /**
      * 创建用户 id
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 创建时间

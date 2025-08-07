@@ -22,13 +22,13 @@ public class Annotation implements Serializable {
     /**
      * 主键ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 对应的图片ID (一对一关系)
      */
-    private Long imageId;
+    private String imageId;
 
     /**
      * 标注数据 (JSON 格式字符串)
@@ -39,7 +39,7 @@ public class Annotation implements Serializable {
     /**
      * 最后修改者ID
      */
-    private Long lastEditorId;
+    private String lastEditorId;
 
     /**
      * 更新时间

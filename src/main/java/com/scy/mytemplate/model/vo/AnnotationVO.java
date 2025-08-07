@@ -19,14 +19,14 @@ import java.util.Map;
 @Data
 public class AnnotationVO implements Serializable {
 
-    private Long id;
-    private Long imageId;
+    private String id;
+    private String imageId;
 
     /**
      * 将数据库中的 JSON 字符串反序列化为 Map 对象，方便前端直接使用。
      */
     private Map<String, Object> jsonContent;
-    private Long lastEditorId;
+    private String lastEditorId;
     private Date updateTime;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();

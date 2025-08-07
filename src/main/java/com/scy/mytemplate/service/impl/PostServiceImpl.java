@@ -104,12 +104,12 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         String searchText = postQueryRequest.getSearchText();
         String sortField = postQueryRequest.getSortField();
         String sortOrder = postQueryRequest.getSortOrder();
-        Long id = postQueryRequest.getId();
+        String id = postQueryRequest.getId();
         String title = postQueryRequest.getTitle();
         String content = postQueryRequest.getContent();
         List<String> tagList = postQueryRequest.getTags();
-        Long userId = postQueryRequest.getUserId();
-        Long notId = postQueryRequest.getNotId();
+        String userId = postQueryRequest.getUserId();
+        String notId = postQueryRequest.getNotId();
         // 拼接查询条件
         if (StringUtils.isNotBlank(searchText)) {
             queryWrapper.and(qw -> qw.like("title", searchText).or().like("content", searchText));
@@ -131,14 +131,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     @Override
     public Page<Post> searchFromEs(PostQueryRequest postQueryRequest) {
-        Long id = postQueryRequest.getId();
-        Long notId = postQueryRequest.getNotId();
+        String id = postQueryRequest.getId();
+        String notId = postQueryRequest.getNotId();
         String searchText = postQueryRequest.getSearchText();
         String title = postQueryRequest.getTitle();
         String content = postQueryRequest.getContent();
         List<String> tagList = postQueryRequest.getTags();
         List<String> orTagList = postQueryRequest.getOrTags();
-        Long userId = postQueryRequest.getUserId();
+        String userId = postQueryRequest.getUserId();
         // es 起始页为 0
         long current = postQueryRequest.getCurrent() - 1;
         long pageSize = postQueryRequest.getPageSize();
@@ -206,11 +206,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         // 查出结果后，从 db 获取最新动态数据（比如点赞数）
         if (searchHits.hasSearchHits()) {
             List<SearchHit<PostEsDTO>> searchHitList = searchHits.getSearchHits();
-            List<Long> postIdList = searchHitList.stream().map(searchHit -> searchHit.getContent().getId())
+            List<String> postIdList = searchHitList.stream().map(searchHit -> searchHit.getContent().getId())
                     .collect(Collectors.toList());
             List<Post> postList = baseMapper.selectBatchIds(postIdList);
             if (postList != null) {
-                Map<Long, List<Post>> idPostMap = postList.stream().collect(Collectors.groupingBy(Post::getId));
+                Map<String, List<Post>> idPostMap = postList.stream().collect(Collectors.groupingBy(Post::getId));
                 postIdList.forEach(postId -> {
                     if (idPostMap.containsKey(postId)) {
                         resourceList.add(idPostMap.get(postId).get(0));
@@ -229,11 +229,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     @Override
     public PostVO getPostVO(Post post, HttpServletRequest request) {
         PostVO postVO = PostVO.objToVo(post);
-        long postId = post.getId();
+        String postId = post.getId();
         // 1. 关联查询用户信息
-        Long userId = post.getUserId();
+        String userId = post.getUserId();
         User user = null;
-        if (userId != null && userId > 0) {
+        if (userId != null && StringUtils.isNotBlank(userId)){
             user = userService.getById(userId);
         }
         UserVO userVO = userService.getUserVO(user);
@@ -265,15 +265,15 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             return postVOPage;
         }
         // 1. 关联查询用户信息
-        Set<Long> userIdSet = postList.stream().map(Post::getUserId).collect(Collectors.toSet());
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
+        Set<String> userIdSet = postList.stream().map(Post::getUserId).collect(Collectors.toSet());
+        Map<String, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
         // 2. 已登录，获取用户点赞、收藏状态
-        Map<Long, Boolean> postIdHasThumbMap = new HashMap<>();
-        Map<Long, Boolean> postIdHasFavourMap = new HashMap<>();
+        Map<String, Boolean> postIdHasThumbMap = new HashMap<>();
+        Map<String, Boolean> postIdHasFavourMap = new HashMap<>();
         User loginUser = userService.getLoginUserPermitNull(request);
         if (loginUser != null) {
-            Set<Long> postIdSet = postList.stream().map(Post::getId).collect(Collectors.toSet());
+            Set<String> postIdSet = postList.stream().map(Post::getId).collect(Collectors.toSet());
             loginUser = userService.getLoginUser(request);
             // 获取点赞
             QueryWrapper<PostThumb> postThumbQueryWrapper = new QueryWrapper<>();
@@ -291,7 +291,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         // 填充信息
         List<PostVO> postVOList = postList.stream().map(post -> {
             PostVO postVO = PostVO.objToVo(post);
-            Long userId = post.getUserId();
+            String userId = post.getUserId();
             User user = null;
             if (userIdUserListMap.containsKey(userId)) {
                 user = userIdUserListMap.get(userId).get(0);

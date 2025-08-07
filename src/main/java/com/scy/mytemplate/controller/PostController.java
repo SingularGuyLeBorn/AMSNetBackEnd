@@ -58,7 +58,7 @@ public class PostController {
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Long> addPost(@RequestBody PostAddRequest postAddRequest, HttpServletRequest request) {
+    public BaseResponse<String> addPost(@RequestBody PostAddRequest postAddRequest, HttpServletRequest request) {
         if (postAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -75,7 +75,7 @@ public class PostController {
         post.setThumbNum(0);
         boolean result = postService.save(post);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        long newPostId = post.getId();
+        String newPostId = post.getId();
         return ResultUtils.success(newPostId);
     }
 
@@ -88,11 +88,11 @@ public class PostController {
      */
     @PostMapping("/delete")
     public BaseResponse<Boolean> deletePost(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
-        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+        if (deleteRequest == null || deleteRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = userService.getLoginUser(request);
-        long id = deleteRequest.getId();
+        String id = deleteRequest.getId();
         // 判断是否存在
         Post oldPost = postService.getById(id);
         ThrowUtils.throwIf(oldPost == null, ErrorCode.NOT_FOUND_ERROR);
@@ -113,7 +113,7 @@ public class PostController {
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> updatePost(@RequestBody PostUpdateRequest postUpdateRequest) {
-        if (postUpdateRequest == null || postUpdateRequest.getId() <= 0) {
+        if (postUpdateRequest == null || postUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Post post = new Post();
@@ -124,7 +124,7 @@ public class PostController {
         }
         // 参数校验
         postService.validPost(post, false);
-        long id = postUpdateRequest.getId();
+        String id = postUpdateRequest.getId();
         // 判断是否存在
         Post oldPost = postService.getById(id);
         ThrowUtils.throwIf(oldPost == null, ErrorCode.NOT_FOUND_ERROR);
@@ -139,8 +139,8 @@ public class PostController {
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<PostVO> getPostVOById(long id, HttpServletRequest request) {
-        if (id <= 0) {
+    public BaseResponse<PostVO> getPostVOById(String id, HttpServletRequest request) {
+        if (id == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Post post = postService.getById(id);
@@ -237,7 +237,7 @@ public class PostController {
      */
     @PostMapping("/edit")
     public BaseResponse<Boolean> editPost(@RequestBody PostEditRequest postEditRequest, HttpServletRequest request) {
-        if (postEditRequest == null || postEditRequest.getId() <= 0) {
+        if (postEditRequest == null || postEditRequest.getId() == null ){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Post post = new Post();
@@ -249,7 +249,7 @@ public class PostController {
         // 参数校验
         postService.validPost(post, false);
         User loginUser = userService.getLoginUser(request);
-        long id = postEditRequest.getId();
+        String id = postEditRequest.getId();
         // 判断是否存在
         Post oldPost = postService.getById(id);
         ThrowUtils.throwIf(oldPost == null, ErrorCode.NOT_FOUND_ERROR);

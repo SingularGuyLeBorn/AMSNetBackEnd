@@ -32,7 +32,7 @@ public class PostEsDTO implements Serializable {
      * id
      */
     @Id
-    private Long id;
+    private String id;
 
     /**
      * 标题
@@ -62,7 +62,7 @@ public class PostEsDTO implements Serializable {
     /**
      * 创建用户 id
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 创建时间

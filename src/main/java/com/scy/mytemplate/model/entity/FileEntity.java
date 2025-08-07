@@ -12,9 +12,9 @@ public class FileEntity implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
-    private Long userId;        // 用户ID
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
+    private String userId;        // 用户ID
     private String text;        // 用户输入的文字
     private String color;       // 用户选择的颜色
     private Long timestamp;     // 更改时间
@@ -23,7 +23,7 @@ public class FileEntity implements Serializable {
     public FileEntity() {
     }
 
-    public FileEntity(Long userId, String text, String color, Long timestamp, byte[] imageFile) {
+    public FileEntity(String userId, String text, String color, Long timestamp, byte[] imageFile) {
         this.userId = userId;
         this.text = text;
         this.color = color;

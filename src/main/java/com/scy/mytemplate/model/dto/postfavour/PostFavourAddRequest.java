@@ -15,7 +15,7 @@ public class PostFavourAddRequest implements Serializable {
     /**
      * 帖子 id
      */
-    private Long postId;
+    private String postId;
 
     private static final long serialVersionUID = 1L;
 }

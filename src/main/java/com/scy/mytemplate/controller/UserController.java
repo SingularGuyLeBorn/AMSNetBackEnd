@@ -66,7 +66,7 @@ public class UserController {
      * @return 包含新用户ID的响应。
      */
     @PostMapping("/register")
-    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+    public BaseResponse<String> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -76,7 +76,7 @@ public class UserController {
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不完整");
         }
-        long result = userService.userRegister(userAccount, userPassword, checkPassword);
+        String result = userService.userRegister(userAccount, userPassword, checkPassword);
         return ResultUtils.success(result);
     }
 
@@ -166,7 +166,7 @@ public class UserController {
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
+    public BaseResponse<String> addUser(@RequestBody UserAddRequest userAddRequest) {
         if (userAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -186,7 +186,7 @@ public class UserController {
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
-        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+        if (deleteRequest == null || deleteRequest.getId() == null ){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         // 基石建议: 直接物理删除用户是危险操作，可能因外键约束失败。
@@ -222,8 +222,8 @@ public class UserController {
      */
     @GetMapping("/get/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<UserVO> getUserVOById(long id) {
-        if (id <= 0) {
+    public BaseResponse<UserVO> getUserVOById(String id) {
+        if (id  == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = userService.getById(id);

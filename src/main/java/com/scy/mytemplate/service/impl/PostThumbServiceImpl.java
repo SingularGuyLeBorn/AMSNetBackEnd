@@ -36,14 +36,14 @@ public class PostThumbServiceImpl extends ServiceImpl<PostThumbMapper, PostThumb
      * @return
      */
     @Override
-    public int doPostThumb(long postId, User loginUser) {
+    public int doPostThumb(String postId, User loginUser) {
         // 判断实体是否存在，根据类别获取实体
         Post post = postService.getById(postId);
         if (post == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
         // 是否已点赞
-        long userId = loginUser.getId();
+        String userId = loginUser.getId();
         // 每个用户串行点赞
         // 锁必须要包裹住事务方法
         PostThumbService postThumbService = (PostThumbService) AopContext.currentProxy();
@@ -61,7 +61,7 @@ public class PostThumbServiceImpl extends ServiceImpl<PostThumbMapper, PostThumb
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int doPostThumbInner(long userId, long postId) {
+    public int doPostThumbInner(String userId, String postId) {
         PostThumb postThumb = new PostThumb();
         postThumb.setUserId(userId);
         postThumb.setPostId(postId);

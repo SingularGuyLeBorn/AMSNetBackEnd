@@ -7,9 +7,9 @@
 <mapper namespace="com.scy.mytemplate.mapper.PostThumbMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.PostThumb">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="postId" column="postId" jdbcType="BIGINT"/>
-            <result property="userId" column="userId" jdbcType="BIGINT"/>
+            <id property="id" column="id" jdbcType="VARCHAR"/>
+            <result property="postId" column="postId" jdbcType="VARCHAR"/>
+            <result property="userId" column="userId" jdbcType="VARCHAR"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>

@@ -16,7 +16,7 @@ public class AnnotationUpdateRequest implements Serializable {
     /**
      * 要更新的标注记录本身的主键ID。
      */
-    private Long annotationId;
+    private String annotationId;
 
     /**
      * 最新的标注内容 (JSON 对象)。

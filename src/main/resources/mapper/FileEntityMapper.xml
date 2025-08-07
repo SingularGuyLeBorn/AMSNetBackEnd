@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- @author <a href="https://github.com/liyupi">程序员鱼皮</a> -->
-<!-- @from <a href="https://yupi.icu">编程导航知识星球</a> -->
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.scy.mytemplate.mapper.FileEntityMapper">
+
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.FileEntity">
-        <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
         <result property="text" column="text" jdbcType="VARCHAR"/>
         <result property="color" column="color" jdbcType="VARCHAR"/>
         <result property="timestamp" column="timestamp" jdbcType="BIGINT"/>
         <result property="imageFile" column="image_file" jdbcType="BLOB"/>
     </resultMap>
-    <insert id="insertFileEntity"></insert>
+
+    <!-- 【核心修正】为 insertFileEntity 添加完整的 SQL 语句 -->
+    <insert id="insertFileEntity" parameterType="com.scy.mytemplate.model.entity.FileEntity">
+        INSERT INTO FileEntity (id, user_id, text, color, timestamp, image_file)
+        VALUES (#{id, jdbcType=VARCHAR},
+                #{userId, jdbcType=VARCHAR},
+                #{text, jdbcType=VARCHAR},
+                #{color, jdbcType=VARCHAR},
+                #{timestamp, jdbcType=BIGINT},
+                #{imageFile, jdbcType=BLOB})
+    </insert>
 </mapper>

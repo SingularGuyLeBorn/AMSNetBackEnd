@@ -5,11 +5,11 @@
 <mapper namespace="com.scy.mytemplate.mapper.FolderMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Folder">
-        <id property="id" column="id" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="space" column="space" jdbcType="VARCHAR"/>
-        <result property="ownerUserId" column="ownerUserId" jdbcType="BIGINT"/>
-        <result property="ownerOrganizationId" column="ownerOrganizationId" jdbcType="BIGINT"/>
+        <result property="ownerUserId" column="ownerUserId" jdbcType="VARCHAR"/>
+        <result property="ownerOrganizationId" column="ownerOrganizationId" jdbcType="VARCHAR"/>
         <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
         <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
@@ -31,13 +31,12 @@
         -- 1. 所有公共文件夹
         space = 'public'
         -- 2. 用户自己的私有文件夹
-        OR (space = 'private' AND ownerUserId = #{userId})
+        OR (space = 'private' AND ownerUserId = #{userId, jdbcType=VARCHAR})
         -- 3. 用户所属组织的所有组织文件夹
         OR (space = 'organization' AND ownerOrganizationId IN
-        (SELECT organizationId FROM OrganizationMembers WHERE userId = #{userId}))
+        (SELECT organizationId FROM OrganizationMembers WHERE userId = #{userId, jdbcType=VARCHAR}))
         )
         ORDER BY
         space, name
     </select>
 </mapper>
-        <!-- END OF FILE: src/main/resources/mapper/FolderMapper.xml -->

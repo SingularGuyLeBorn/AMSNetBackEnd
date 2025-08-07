@@ -154,7 +154,7 @@ public class GraphServiceImpl implements GraphService {
                 if (com.scy.mytemplate.model.enums.UserRoleEnum.ADMIN.getValue().equals(currentUser.getUserRole())) {
                     result = tx.run("MATCH (n:CircuitNode) RETURN n");
                 } else {
-                    List<Long> orgIds = organizationMemberMapper.findUserOrganizationIds(currentUser.getId());
+                    List<String> orgIds = organizationMemberMapper.findUserOrganizationIds(currentUser.getId());
                     String query = "MATCH (n:CircuitNode) WHERE n.space = 'public' OR (n.space = 'private' AND n.ownerUserId = $userId) OR (n.space = 'organization' AND n.ownerOrganizationId IN $orgIds) RETURN n";
                     Map<String, Object> params = Map.of("userId", currentUser.getId(), "orgIds", orgIds);
                     result = tx.run(query, params);

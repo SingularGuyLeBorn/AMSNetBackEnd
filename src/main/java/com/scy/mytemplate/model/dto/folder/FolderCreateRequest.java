@@ -26,7 +26,7 @@ public class FolderCreateRequest implements Serializable {
     /**
      * 当 space 为 'organization' 时，必须提供此字段，指定文件夹所属的组织ID。
      */
-    private Long ownerOrganizationId;
+    private String ownerOrganizationId;
 
     private static final long serialVersionUID = 1L;
 }

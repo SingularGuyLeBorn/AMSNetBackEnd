@@ -5,16 +5,15 @@
 <mapper namespace="com.scy.mytemplate.mapper.AnnotationMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Annotation">
-        <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="imageId" column="imageId" jdbcType="BIGINT"/>
-        <result property="jsonContent" column="jsonContent" jdbcType="VARCHAR" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
-        <result property="lastEditorId" column="lastEditorId" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="imageId" column="imageId" jdbcType="VARCHAR"/>
+        <!-- 【核心修正】移除 jsonContent 的 jdbcType，让 typeHandler 自动处理 -->
+        <result property="jsonContent" column="jsonContent" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="lastEditorId" column="lastEditorId" jdbcType="VARCHAR"/>
         <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,imageId,jsonContent,
-        lastEditorId,updateTime
+        id, imageId, jsonContent, lastEditorId, updateTime
     </sql>
 </mapper>
-        <!-- END OF FILE: src/main/resources/mapper/AnnotationMapper.xml -->

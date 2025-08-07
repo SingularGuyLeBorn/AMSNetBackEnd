@@ -50,7 +50,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private OrganizationMapper organizationMapper;
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public String userRegister(String userAccount, String userPassword, String checkPassword) {
         // 1. 校验输入参数
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
@@ -237,7 +237,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
         }
-        Long id = userQueryRequest.getId();
+        String id = userQueryRequest.getId();
         String unionId = userQueryRequest.getUnionId();
         String mpOpenId = userQueryRequest.getMpOpenId();
         String userName = userQueryRequest.getUserName();

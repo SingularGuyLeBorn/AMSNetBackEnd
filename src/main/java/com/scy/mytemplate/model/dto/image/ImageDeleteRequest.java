@@ -15,7 +15,7 @@ public class ImageDeleteRequest implements Serializable {
     /**
      * 要删除的图片的ID。
      */
-    private Long imageId;
+    private String imageId;
 
     private static final long serialVersionUID = 1L;
 }

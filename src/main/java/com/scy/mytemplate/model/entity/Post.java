@@ -22,8 +22,8 @@ public class Post implements Serializable {
     /**
      * id
      */
-    @TableId(type = IdType.ASSIGN_ID)
-    private Long id;
+    @TableId(type = IdType.ASSIGN_UUID)
+    private String id;
 
     /**
      * 标题
@@ -53,7 +53,7 @@ public class Post implements Serializable {
     /**
      * 创建用户 id
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 创建时间

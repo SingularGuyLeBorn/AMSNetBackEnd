@@ -15,11 +15,11 @@ import java.util.Date;
 @Data
 public class FolderVO implements Serializable {
 
-    private Long id;
+    private String id;
     private String name;
     private String space;
-    private Long ownerUserId;
-    private Long ownerOrganizationId;
+    private String ownerUserId;
+    private String ownerOrganizationId;
     private Date createTime;
     private Date updateTime;
 

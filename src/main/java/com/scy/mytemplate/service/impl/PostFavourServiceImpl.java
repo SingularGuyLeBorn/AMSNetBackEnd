@@ -39,14 +39,14 @@ public class PostFavourServiceImpl extends ServiceImpl<PostFavourMapper, PostFav
      * @return
      */
     @Override
-    public int doPostFavour(long postId, User loginUser) {
+    public int doPostFavour(String postId, User loginUser) {
         // 判断是否存在
         Post post = postService.getById(postId);
         if (post == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
         // 是否已帖子收藏
-        long userId = loginUser.getId();
+        String userId = loginUser.getId();
         // 每个用户串行帖子收藏
         // 锁必须要包裹住事务方法
         PostFavourService postFavourService = (PostFavourService) AopContext.currentProxy();
@@ -56,8 +56,9 @@ public class PostFavourServiceImpl extends ServiceImpl<PostFavourMapper, PostFav
     }
 
     @Override
-    public Page<Post> listFavourPostByPage(IPage<Post> page, Wrapper<Post> queryWrapper, long favourUserId) {
-        if (favourUserId <= 0) {
+    public Page<Post> listFavourPostByPage(IPage<Post> page, Wrapper<Post> queryWrapper, String favourUserId) {
+
+        if (favourUserId == null) {
             return new Page<>();
         }
         return baseMapper.listFavourPostByPage(page, queryWrapper, favourUserId);
@@ -72,7 +73,7 @@ public class PostFavourServiceImpl extends ServiceImpl<PostFavourMapper, PostFav
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int doPostFavourInner(long userId, long postId) {
+    public int doPostFavourInner(String userId, String postId) {
         PostFavour postFavour = new PostFavour();
         postFavour.setUserId(userId);
         postFavour.setPostId(postId);

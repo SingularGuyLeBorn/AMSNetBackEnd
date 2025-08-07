@@ -19,7 +19,7 @@ public interface PostThumbService extends IService<PostThumb> {
      * @param loginUser
      * @return
      */
-    int doPostThumb(long postId, User loginUser);
+    int doPostThumb(String postId, User loginUser);
 
     /**
      * 帖子点赞（内部服务）
@@ -28,5 +28,5 @@ public interface PostThumbService extends IService<PostThumb> {
      * @param postId
      * @return
      */
-    int doPostThumbInner(long userId, long postId);
+    int doPostThumbInner(String userId, String postId);
 }

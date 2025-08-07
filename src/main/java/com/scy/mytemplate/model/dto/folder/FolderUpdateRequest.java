@@ -15,7 +15,7 @@ public class FolderUpdateRequest implements Serializable {
     /**
      * 要更新的文件夹的ID。
      */
-    private Long folderId;
+    private String folderId;
 
     /**
      * 文件夹的新名称。

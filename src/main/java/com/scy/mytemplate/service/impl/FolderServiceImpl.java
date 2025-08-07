@@ -75,7 +75,7 @@ public class FolderServiceImpl extends ServiceImpl<FolderMapper, Folder> impleme
     }
 
     @Override
-    public void deleteFolder(Long folderId, User currentUser) {
+    public void deleteFolder(String folderId, User currentUser) {
         Folder folder = this.getById(folderId);
         if (folder == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文件夹不存在");

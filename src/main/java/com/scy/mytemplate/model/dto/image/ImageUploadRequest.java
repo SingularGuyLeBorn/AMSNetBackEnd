@@ -18,7 +18,7 @@ public class ImageUploadRequest implements Serializable {
      * 目标文件夹的 ID。
      * 指示图片应该被上传到哪个工作区/文件夹中。
      */
-    private Long folderId;
+    private String folderId;
 
     private static final long serialVersionUID = 1L;
 }

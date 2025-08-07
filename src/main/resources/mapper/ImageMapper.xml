@@ -5,14 +5,14 @@
 <mapper namespace="com.scy.mytemplate.mapper.ImageMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Image">
-        <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="folderId" column="folderId" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="folderId" column="folderId" jdbcType="VARCHAR"/>
         <result property="originalFilename" column="originalFilename" jdbcType="VARCHAR"/>
         <result property="storagePath" column="storagePath" jdbcType="VARCHAR"/>
         <result property="width" column="width" jdbcType="INTEGER"/>
         <result property="height" column="height" jdbcType="INTEGER"/>
         <result property="fileSize" column="fileSize" jdbcType="BIGINT"/>
-        <result property="uploaderId" column="uploaderId" jdbcType="BIGINT"/>
+        <result property="uploaderId" column="uploaderId" jdbcType="VARCHAR"/>
         <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
         <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
     </resultMap>
@@ -27,7 +27,6 @@
         select
         <include refid="Base_Column_List"/>
         from Images
-        where storagePath = #{storagePath} AND isDelete = 0
+        where storagePath = #{storagePath, jdbcType=VARCHAR} AND isDelete = 0
     </select>
 </mapper>
-        <!-- END OF FILE: src/main/resources/mapper/ImageMapper.xml -->

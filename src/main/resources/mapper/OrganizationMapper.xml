@@ -5,9 +5,9 @@
 <mapper namespace="com.scy.mytemplate.mapper.OrganizationMapper">
 
     <resultMap id="BaseResultMap" type="com.scy.mytemplate.model.entity.Organization">
-        <id property="id" column="id" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="VARCHAR"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
-        <result property="ownerId" column="ownerId" jdbcType="BIGINT"/>
+        <result property="ownerId" column="ownerId" jdbcType="VARCHAR"/>
         <result property="description" column="description" jdbcType="VARCHAR"/>
         <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
@@ -29,8 +29,7 @@
                 JOIN
             OrganizationMembers mem ON org.id = mem.organizationId
         WHERE
-            mem.userId = #{userId}
+            mem.userId = #{userId, jdbcType=VARCHAR}
           AND org.isDelete = 0
     </select>
 </mapper>
-        <!-- END OF FILE: src/main/resources/mapper/OrganizationMapper.xml -->

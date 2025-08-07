@@ -15,7 +15,7 @@ public class AnnotationGetRequest implements Serializable {
     /**
      * 要获取标注数据的图片ID。
      */
-    private Long imageId;
+    private String imageId;
 
     private static final long serialVersionUID = 1L;
 }

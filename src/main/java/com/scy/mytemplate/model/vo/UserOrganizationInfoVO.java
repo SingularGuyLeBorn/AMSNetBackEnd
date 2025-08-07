@@ -17,7 +17,7 @@ public class UserOrganizationInfoVO implements Serializable {
     /**
      * 组织的唯一ID。
      */
-    private Long organizationId;
+    private String organizationId;
 
     /**
      * 组织的名称。
