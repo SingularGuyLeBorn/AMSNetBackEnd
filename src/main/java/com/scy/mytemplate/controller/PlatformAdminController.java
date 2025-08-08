@@ -18,6 +18,7 @@ import com.scy.mytemplate.service.OrganizationService;
 import com.scy.mytemplate.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/admin/platform")
+@Slf4j
 @Api(tags = "PlatformAdminController")
 @AuthCheck(mustRole = UserConstant.ADMIN_ROLE) // 整个 Controller 都需要平台管理员权限
 public class PlatformAdminController {
