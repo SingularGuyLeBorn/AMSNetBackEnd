@@ -7,6 +7,8 @@ import com.scy.mytemplate.mapper.OrganizationMemberMapper;
 import com.scy.mytemplate.model.dto.node.*;
 import com.scy.mytemplate.model.dto.relationship.*;
 import com.scy.mytemplate.model.entity.User;
+import com.scy.mytemplate.model.enums.PermissionEnum;
+import com.scy.mytemplate.model.enums.UserRoleEnum;
 import com.scy.mytemplate.model.vo.NodeVO;
 import com.scy.mytemplate.model.vo.RelationshipVO;
 import com.scy.mytemplate.service.GraphService;
@@ -42,7 +44,8 @@ public class GraphServiceImpl implements GraphService {
 
     @Resource
     private PermissionService permissionService;
-    @Autowired
+
+    @Resource
     private OrganizationMemberMapper organizationMemberMapper;
 
     @Autowired
@@ -53,16 +56,13 @@ public class GraphServiceImpl implements GraphService {
     // region 节点操作实现
     @Override
     public String createNode(NodeCreateRequest request, User currentUser) {
-        // createNode 的主要逻辑已移至 ImageServiceImpl 的上传流程中，以确保原子性。
-        // 此处保留方法以备将来可能需要的、不通过上传文件直接创建节点的场景。
-        // 但目前推荐的流程是通过上传图片来隐式创建节点。
         String name = request.getName();
         if (StringUtils.isBlank(name)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "节点名称不能为空");
         }
-        permissionService.checkNodePermission(name, currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        // 在创建时，我们假设权限已在调用此方法的服务中（如ImageService）校验过
+        // permissionService.checkNodePermission(name, currentUser, PermissionEnum.WRITE);
         try (Session session = driver.session()) {
-            // 此处省略了自动注入权限属性的逻辑，因为假设调用此方法时已在 properties 中提供了
             boolean exists = session.readTransaction(tx -> tx.run("MATCH (n:CircuitNode {name: $name}) RETURN n", Map.of("name", name)).hasNext());
             if (exists) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "节点 '" + name + "' 已存在");
@@ -80,7 +80,7 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public String deleteNode(NodeDeleteRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getName(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getName(), currentUser, PermissionEnum.WRITE);
         try (Session session = driver.session()) {
             session.writeTransaction(tx -> {
                 tx.run("MATCH (n:CircuitNode {name: $name}) DETACH DELETE n", Map.of("name", request.getName()));
@@ -95,12 +95,12 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public String updateNode(NodeUpdateRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getName(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getName(), currentUser, PermissionEnum.WRITE);
         if ((request.getPropertiesToSet() == null || request.getPropertiesToSet().isEmpty()) && (request.getPropertiesToRemove() == null || request.getPropertiesToRemove().isEmpty())) {
             return request.getName();
         }
         try (Session session = driver.session()) {
-            return session.writeTransaction(tx -> {
+            String updatedNodeName = session.writeTransaction(tx -> {
                 StringBuilder queryBuilder = new StringBuilder("MATCH (n:CircuitNode {name: $name})");
                 Map<String, Object> parameters = new HashMap<>();
                 parameters.put("name", request.getName());
@@ -122,6 +122,9 @@ public class GraphServiceImpl implements GraphService {
                 }
                 return result.single().get(0).asString();
             });
+            // 异步触发关系自动创建
+            triggerAutoRelationshipCreation(updatedNodeName);
+            return updatedNodeName;
         } catch (Exception e) {
             log.error("更新节点失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新节点时发生数据库错误: " + e.getMessage());
@@ -130,7 +133,7 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public NodeVO findNode(NodeQueryRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getName(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.READ);
+        permissionService.checkNodePermission(request.getName(), currentUser, PermissionEnum.READ);
         try (Session session = driver.session()) {
             return session.readTransaction(tx -> {
                 Result result = tx.run("MATCH (n:CircuitNode {name: $name}) RETURN n", Map.of("name", request.getName()));
@@ -151,11 +154,11 @@ public class GraphServiceImpl implements GraphService {
         try (Session session = driver.session()) {
             return session.readTransaction(tx -> {
                 Result result;
-                if (com.scy.mytemplate.model.enums.UserRoleEnum.ADMIN.getValue().equals(currentUser.getUserRole())) {
+                if (UserRoleEnum.ADMIN.getValue().equals(currentUser.getUserRole())) {
                     result = tx.run("MATCH (n:CircuitNode) RETURN n");
                 } else {
                     List<String> orgIds = organizationMemberMapper.findUserOrganizationIds(currentUser.getId());
-                    String query = "MATCH (n:CircuitNode) WHERE n.space = 'public' OR (n.space = 'private' AND n.ownerUserId = $userId) OR (n.space = 'organization' AND n.ownerOrganizationId IN $orgIds) RETURN n";
+                    String query = "MATCH (n:CircuitNode) WHERE n.space = 'platform_public' OR (n.space IN ['user_private', 'user_public'] AND n.ownerUserId = $userId) OR (n.space = 'organization_public' AND n.ownerOrganizationId IN $orgIds) RETURN n";
                     Map<String, Object> params = Map.of("userId", currentUser.getId(), "orgIds", orgIds);
                     result = tx.run(query, params);
                 }
@@ -168,13 +171,32 @@ public class GraphServiceImpl implements GraphService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取全部节点时发生数据库错误: " + e.getMessage());
         }
     }
+
+    @Override
+    public void updateNodePermissions(String nodeName, Map<String, Object> newPermissionProperties) {
+        if (StringUtils.isBlank(nodeName) || newPermissionProperties == null || newPermissionProperties.isEmpty()) {
+            return;
+        }
+        try (Session session = driver.session()) {
+            session.writeTransaction(tx -> {
+                String query = "MATCH (n:CircuitNode {name: $name}) SET n += $props";
+                tx.run(query, Map.of("name", nodeName, "props", newPermissionProperties));
+                return null;
+            });
+            log.info("成功更新节点 '{}' 的权限属性。", nodeName);
+        } catch (Exception e) {
+            log.error("更新节点 '{}' 权限属性失败。", nodeName, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新知识图谱节点权限失败");
+        }
+    }
+
     // endregion
 
     // region 关系操作实现
     @Override
     public String createRelationship(RelationshipCreateRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getFromNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
-        permissionService.checkNodePermission(request.getToNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getFromNode(), currentUser, PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getToNode(), currentUser, PermissionEnum.WRITE);
         String fromNode = request.getFromNode();
         String toNode = request.getToNode();
         String name = request.getName();
@@ -201,8 +223,8 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public String deleteRelationship(RelationshipDeleteRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getFromNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
-        permissionService.checkNodePermission(request.getToNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getFromNode(), currentUser, PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getToNode(), currentUser, PermissionEnum.WRITE);
         String fromNode = request.getFromNode();
         String toNode = request.getToNode();
         String name = request.getName();
@@ -222,8 +244,8 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public String updateRelationship(RelationshipUpdateRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getFromNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
-        permissionService.checkNodePermission(request.getToNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getFromNode(), currentUser, PermissionEnum.WRITE);
+        permissionService.checkNodePermission(request.getToNode(), currentUser, PermissionEnum.WRITE);
         String fromNode = request.getFromNode();
         String toNode = request.getToNode();
         String name = request.getName();
@@ -256,8 +278,8 @@ public class GraphServiceImpl implements GraphService {
 
     @Override
     public RelationshipVO findRelationship(RelationshipQueryRequest request, User currentUser) {
-        permissionService.checkNodePermission(request.getFromNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.READ);
-        permissionService.checkNodePermission(request.getToNode(), currentUser, com.scy.mytemplate.model.enums.PermissionEnum.READ);
+        permissionService.checkNodePermission(request.getFromNode(), currentUser, PermissionEnum.READ);
+        permissionService.checkNodePermission(request.getToNode(), currentUser, PermissionEnum.READ);
         String fromNode = request.getFromNode();
         String toNode = request.getToNode();
         String name = request.getName();
@@ -306,6 +328,41 @@ public class GraphServiceImpl implements GraphService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取全部关系时发生数据库错误: " + e.getMessage());
         }
     }
+
+    @Override
+    public void triggerAutoRelationshipCreation(String nodeName) {
+        // 实际项目中，这里应该是 @Async 异步执行
+        log.info("开始为节点 '{}' 触发自动关系创建...", nodeName);
+        try (Session session = driver.session()) {
+            session.writeTransaction(tx -> {
+                // 这个查询非常强大:
+                // 1. 匹配触发节点
+                // 2. UNWIND 其所有属性，变成 key-value 行
+                // 3. 过滤掉我们不关心的属性（如name, space等）
+                // 4. 对于每个有效的属性，匹配所有其他具有相同 key-value 的节点
+                // 5. MERGE (合并) 关系，如果关系不存在则创建，避免重复
+                String query =
+                        "MATCH (a:CircuitNode {name: $nodeName}) " +
+                                "UNWIND keys(a) AS key " +
+                                "WITH a, key WHERE NOT key IN ['name', 'space', 'ownerUserId', 'ownerOrganizationId'] " +
+                                "MATCH (b:CircuitNode) WHERE a <> b AND a[key] = b[key] " +
+                                "WITH a, b, key " +
+                                "CALL apoc.merge.relationship(a, 'SHARED_' + apoc.text.upperCamelCase(key), {}, {}, b) YIELD rel " +
+                                "RETURN count(rel) AS createdRels";
+
+                Result result = tx.run(query, Map.of("nodeName", nodeName));
+                if (result.hasNext()) {
+                    long createdCount = result.single().get("createdRels").asLong();
+                    log.info("为节点 '{}' 自动创建/合并了 {} 条关系。", nodeName, createdCount);
+                }
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("为节点 '{}' 自动创建关系时发生错误", nodeName, e);
+            // 在异步场景中，不应向上抛出业务异常，而是记录错误
+        }
+    }
+
     // endregion
 
     // region 辅助方法 (Helpers)

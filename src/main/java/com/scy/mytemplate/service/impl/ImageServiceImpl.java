@@ -1,6 +1,5 @@
 // FILE: src/main/java/com/scy/mytemplate/service/impl/ImageServiceImpl.java
 package com.scy.mytemplate.service.impl;
-
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,7 +8,6 @@ import com.scy.mytemplate.common.ErrorCode;
 import com.scy.mytemplate.exception.BusinessException;
 import com.scy.mytemplate.mapper.FolderMapper;
 import com.scy.mytemplate.mapper.ImageMapper;
-import com.scy.mytemplate.model.dto.annotation.AnnotationCreateRequest;
 import com.scy.mytemplate.model.dto.image.*;
 import com.scy.mytemplate.model.dto.node.NodeCreateRequest;
 import com.scy.mytemplate.model.dto.node.NodeDeleteRequest;
@@ -23,7 +21,6 @@ import com.scy.mytemplate.service.AnnotationService;
 import com.scy.mytemplate.service.GraphService;
 import com.scy.mytemplate.service.ImageService;
 import com.scy.mytemplate.service.PermissionService;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,16 +29,12 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,7 +44,6 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements ImageService {
-
     @Resource
     private FolderMapper folderMapper;
     @Resource
@@ -69,24 +61,11 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ImageVO uploadImage(String folderId, MultipartFile file, User currentUser) {
-        List<ImageVO> result = this.uploadImagesWithAnnotationsBatch(folderId, Collections.emptyMap(), Collections.singletonList(file), currentUser);
-        if (result.isEmpty()) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片上传失败");
+        Folder folder = folderMapper.selectById(folderId);
+        if (folder == null || folder.getIsDelete() == 1) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "目标文件夹不存在");
         }
-        return result.get(0);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public List<ImageVO> uploadImagesBatch(String folderId, List<MultipartFile> files, User currentUser) {
-        return this.uploadImagesWithAnnotationsBatch(folderId, Collections.emptyMap(), files, currentUser);
-    }
-
-    @Data
-    private static class GroupedFiles {
-        MultipartFile imageFile;
-        MultipartFile jsonFile;
-        MultipartFile yoloFile;
+        return processAndSaveSingleImageEntry(folder, file, null, currentUser);
     }
 
     @Override
@@ -98,129 +77,44 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         }
         permissionService.checkFolderPermission(folder, currentUser, PermissionEnum.WRITE);
 
-        Map<String, GroupedFiles> fileGroups = new HashMap<>();
+        Map<String, MultipartFile> imageFiles = new HashMap<>();
+        Map<String, MultipartFile> jsonFiles = new HashMap<>();
         for (MultipartFile file : files) {
             String baseName = FilenameUtils.getBaseName(file.getOriginalFilename());
-            if (StringUtils.isBlank(baseName)) continue;
-
-            fileGroups.putIfAbsent(baseName, new GroupedFiles());
-            GroupedFiles group = fileGroups.get(baseName);
             String extension = FilenameUtils.getExtension(file.getOriginalFilename()).toLowerCase();
-
-            switch (extension) {
-                case "png":
-                case "jpg":
-                case "jpeg":
-                    group.setImageFile(file);
-                    break;
-                case "json":
-                    group.setJsonFile(file);
-                    break;
-                case "txt":
-                    group.setYoloFile(file);
-                    break;
+            if (Arrays.asList("png", "jpg", "jpeg", "bmp", "gif").contains(extension)) {
+                imageFiles.put(baseName, file);
+            } else if ("json".equals(extension)) {
+                jsonFiles.put(baseName, file);
             }
         }
 
         List<ImageVO> resultVOs = new ArrayList<>();
-        for (Map.Entry<String, GroupedFiles> entry : fileGroups.entrySet()) {
-            GroupedFiles group = entry.getValue();
-            if (group.getImageFile() == null) {
-                log.warn("Skipping annotation file group '{}' as it has no corresponding image file.", entry.getKey());
-                continue;
+        for (Map.Entry<String, MultipartFile> entry : imageFiles.entrySet()) {
+            String baseName = entry.getKey();
+            MultipartFile imageFile = entry.getValue();
+            MultipartFile jsonFile = jsonFiles.get(baseName);
+
+            try {
+                ImageVO savedImageVO = processAndSaveSingleImageEntry(folder, imageFile, jsonFile, currentUser);
+                resultVOs.add(savedImageVO);
+            } catch (Exception e) {
+                log.error("批量上传中处理文件 {} 失败: {}", imageFile.getOriginalFilename(), e.getMessage(), e);
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "处理文件 " + imageFile.getOriginalFilename() + " 失败: " + e.getMessage());
             }
-
-            MultipartFile imageFile = group.getImageFile();
-            Map<String, Object> annotationJson = determineAnnotationJson(group, classMap);
-
-            ImageVO savedImageVO = saveImageAndAnnotation(folder, imageFile, annotationJson, currentUser);
-            resultVOs.add(savedImageVO);
         }
-
         return resultVOs;
     }
 
-    private Map<String, Object> determineAnnotationJson(GroupedFiles group, Map<Integer, String> classMap) {
-        try {
-            if (group.getJsonFile() != null) {
-                String jsonContent = new String(group.getJsonFile().getBytes(), StandardCharsets.UTF_8);
-                return objectMapper.readValue(jsonContent, Map.class);
-            }
-            if (group.getYoloFile() != null) {
-                return convertYoloToJson(group.getYoloFile(), group.getImageFile(), classMap);
-            }
-        } catch (IOException e) {
-            log.error("Failed to read annotation file for base name '{}', defaulting to empty. Error: {}", FilenameUtils.getBaseName(group.getImageFile().getOriginalFilename()), e.getMessage());
-        }
-        return new HashMap<>();
-    }
-
-    private Map<String, Object> convertYoloToJson(MultipartFile yoloFile, MultipartFile imageFile, Map<Integer, String> classMap) throws IOException {
-        BufferedImage bimg = ImageIO.read(imageFile.getInputStream());
-        int imageWidth = bimg.getWidth();
-        int imageHeight = bimg.getHeight();
-
-        List<Map<String, Object>> cpnts = new ArrayList<>();
-        Map<String, Integer> nameCounters = new HashMap<>();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(yoloFile.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.trim().split("\\s+");
-                if (parts.length < 5) continue;
-
-                try {
-                    int classIndex = Integer.parseInt(parts[0]);
-                    double relX = Double.parseDouble(parts[1]);
-                    double relY = Double.parseDouble(parts[2]);
-                    double relW = Double.parseDouble(parts[3]);
-                    double relH = Double.parseDouble(parts[4]);
-
-                    String label = classMap.getOrDefault(classIndex, "unknown_" + classIndex);
-                    int counter = nameCounters.getOrDefault(label, 0);
-                    String uniqueName = label + "_" + counter;
-                    nameCounters.put(label, counter + 1);
-
-                    double absWidth = relW * imageWidth;
-                    double absHeight = relH * imageHeight;
-                    double absCenterX = relX * imageWidth;
-                    double absCenterY = relY * imageHeight;
-
-                    Map<String, Object> component = new LinkedHashMap<>();
-                    component.put("b", absCenterY + absHeight / 2);
-                    component.put("l", absCenterX - absWidth / 2);
-                    component.put("r", absCenterX + absWidth / 2);
-                    component.put("t", absCenterY - absHeight / 2);
-                    component.put("type", label);
-                    component.put("name", uniqueName);
-                    cpnts.add(component);
-                } catch (NumberFormatException e) {
-                    log.warn("Skipping invalid YOLO line: {}", line);
-                }
-            }
-        }
-
-        Map<String, Object> finalJson = new LinkedHashMap<>();
-        finalJson.put("key_points", Collections.emptyList());
-        finalJson.put("segments", Collections.emptyList());
-        finalJson.put("cpnts", cpnts);
-        finalJson.put("netlist_scs", "");
-        finalJson.put("netlist_cdl", "");
-        finalJson.put("local", new HashMap<>());
-        finalJson.put("global", new HashMap<>());
-        return finalJson;
-    }
-
-
-    private ImageVO saveImageAndAnnotation(Folder folder, MultipartFile file, Map<String, Object> annotationJson, User currentUser) {
-        String originalFilename = file.getOriginalFilename();
+    private ImageVO processAndSaveSingleImageEntry(Folder folder, MultipartFile imageFile, MultipartFile jsonFile, User currentUser) {
+        String originalFilename = imageFile.getOriginalFilename();
         String uniqueFilenameSuffix = UUID.randomUUID().toString().substring(0, 8) + "-" + originalFilename;
         Path relativePath;
         switch (folder.getSpace()) {
-            case "organization":
+            case "organization_public":
                 relativePath = Paths.get("organization", folder.getOwnerOrganizationId(), uniqueFilenameSuffix);
                 break;
-            case "private":
+            case "user_private": case "user_public":
                 relativePath = Paths.get("user", folder.getOwnerUserId(), uniqueFilenameSuffix);
                 break;
             default:
@@ -231,9 +125,9 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         File destFile = new File(uploadDir, storagePath);
         try {
             Files.createDirectories(destFile.getParentFile().toPath());
-            file.transferTo(destFile);
+            imageFile.transferTo(destFile);
         } catch (IOException e) {
-            log.error("File saving failed, storagePath: {}", storagePath, e);
+            log.error("文件保存失败, storagePath: {}", storagePath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "文件保存失败");
         }
 
@@ -243,20 +137,23 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             image.setOriginalFilename(originalFilename);
             image.setStoragePath(storagePath);
             image.setUploaderId(currentUser.getId());
-            image.setFileSize(file.getSize());
+            image.setFileSize(imageFile.getSize());
             BufferedImage bufferedImage = ImageIO.read(destFile);
             if (bufferedImage != null) {
                 image.setWidth(bufferedImage.getWidth());
                 image.setHeight(bufferedImage.getHeight());
             }
             this.save(image);
-        } catch (Exception e) {
-            rollbackFile(destFile);
-            log.error("Image metadata persistence failed", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片信息入库失败");
-        }
 
-        try {
+            if (jsonFile != null) {
+                String jsonContent = new String(jsonFile.getBytes());
+                Annotation annotation = new Annotation();
+                annotation.setImageId(image.getId());
+                annotation.setJsonContent(jsonContent);
+                annotation.setLastEditorId(currentUser.getId());
+                annotationService.save(annotation);
+            }
+
             NodeCreateRequest nodeCreateRequest = new NodeCreateRequest();
             nodeCreateRequest.setName(storagePath);
             Map<String, Object> properties = new HashMap<>();
@@ -264,26 +161,19 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             properties.put("ownerUserId", folder.getOwnerUserId());
             properties.put("ownerOrganizationId", folder.getOwnerOrganizationId());
             nodeCreateRequest.setProperties(properties);
-            graphService.createNode(nodeCreateRequest, currentUser);
+            String nodeName = graphService.createNode(nodeCreateRequest, currentUser);
+
+            // 成功创建节点后，触发关系自动创建
+            graphService.triggerAutoRelationshipCreation(nodeName);
+
         } catch (Exception e) {
             rollbackFile(destFile);
-            log.error("Neo4j node creation failed", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建知识图谱节点失败");
+            log.error("图片处理或入库失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片信息入库或知识图谱节点创建失败");
         }
-
-        try {
-            AnnotationCreateRequest annotationRequest = new AnnotationCreateRequest();
-            annotationRequest.setImageId(image.getId());
-            annotationRequest.setJsonContent(annotationJson);
-            annotationService.createAnnotation(annotationRequest, currentUser);
-        } catch (Exception e) {
-            rollbackFile(destFile);
-            log.error("Annotation creation failed", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建标注数据失败: " + e.getMessage());
-        }
-
         return ImageVO.fromEntity(image);
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -293,11 +183,14 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             return;
         }
         permissionService.checkNodePermission(image.getStoragePath(), currentUser, PermissionEnum.WRITE);
+
         boolean success = this.removeById(imageId);
         if (!success) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除图片数据库记录失败");
         }
+
         annotationService.remove(new QueryWrapper<Annotation>().eq("imageId", imageId));
+
         try {
             NodeDeleteRequest nodeDeleteRequest = new NodeDeleteRequest();
             nodeDeleteRequest.setName(image.getStoragePath());
@@ -306,6 +199,8 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             log.error("删除 Neo4j 节点失败，将回滚操作", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除知识图谱节点失败");
         }
+
+        rollbackFile(new File(uploadDir, image.getStoragePath()));
     }
 
     @Override
@@ -395,6 +290,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
+                log.error("物理文件不存在或不可读: {}", filePath);
                 throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "无法读取文件或文件不存在");
             }
         } catch (MalformedURLException e) {
@@ -413,3 +309,4 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
         }
     }
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/service/impl/ImageServiceImpl.java

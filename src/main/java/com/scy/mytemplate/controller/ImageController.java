@@ -2,8 +2,6 @@
 package com.scy.mytemplate.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scy.mytemplate.common.BaseResponse;
 import com.scy.mytemplate.common.ErrorCode;
 import com.scy.mytemplate.common.ResultUtils;
@@ -29,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -51,11 +48,8 @@ public class ImageController {
     @Resource
     private UserService userService;
 
-    @Resource
-    private ObjectMapper objectMapper;
-
     /**
-     * 上传图片 (Create)
+     * 上传单张图片 (Create)
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiOperation(value = "上传图片(Create)", notes = "将图片上传到指定的文件夹，并创建关联的数据库记录和知识图谱节点。")
@@ -81,58 +75,26 @@ public class ImageController {
     }
 
     /**
-     * 批量上传图片 (Batch Create) - 仅图片
+     * 批量上传图片及关联的标注文件 (Batch Create)
      */
-    @PostMapping(value = "/upload/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperation(value = "批量上传图片(Batch Create)", notes = "将多张图片一次性上传到指定的文件夹。")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "folderId", value = "目标文件夹ID", required = true, dataType = "string", paramType = "form"),
-            @ApiImplicitParam(name = "files", value = "要上传的多个图片文件", required = true, dataType = "__file", paramType = "form", allowMultiple = true)
-    })
-    public BaseResponse<List<ImageVO>> uploadImagesBatch(
-            @RequestParam("folderId") String folderId,
-            @RequestPart("files") List<MultipartFile> files,
-            HttpServletRequest request) {
+    @PostMapping(value = "/upload/batch-with-annotations", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ApiOperation(value = "批量上传图片和标注(Batch Create)", notes = "将图片及其对应的JSON/TXT标注文件批量上传到指定文件夹。")
+    public BaseResponse<List<ImageVO>> uploadImagesWithAnnotationsBatch(ImageUploadWithAnnotationRequest uploadRequest, HttpServletRequest request) {
+        String folderId = uploadRequest.getFolderId();
+        List<MultipartFile> files = uploadRequest.getFiles();
+        String classMapJson = uploadRequest.getClassMap(); // 接收但不处理 classMap，以兼容前端
 
         if (folderId == null || folderId.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "未指定目标文件夹");
         }
         if (files == null || files.isEmpty()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传文件不能为空");
-        }
-
-        User currentUser = userService.getLoginUser(request);
-        List<ImageVO> savedImageVOs = imageService.uploadImagesBatch(folderId, files, currentUser);
-        return ResultUtils.success(savedImageVOs);
-    }
-
-    /**
-     * (修正) 批量上传图片及关联标注文件 (Batch Create with Annotations)
-     */
-    @PostMapping(value = "/upload/batch-with-annotations", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperation(value = "批量上传图片及标注", notes = "将图片(.png/.jpg), json或yolo(.txt)文件配对上传。")
-    public BaseResponse<List<ImageVO>> uploadImagesWithAnnotationsBatch(
-            @RequestParam("folderId") String folderId,
-            @RequestParam("classMap") String classMapJson,
-            @RequestPart("files") List<MultipartFile> files,
-            HttpServletRequest request) {
-
-        if (folderId == null || folderId.isEmpty()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "缺少 folderId 参数");
-        }
-        if (files == null || files.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传文件列表不能为空");
         }
-
-        Map<Integer, String> classMap;
-        try {
-            classMap = objectMapper.readValue(classMapJson, new TypeReference<Map<Integer, String>>() {});
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "classMap JSON 格式错误");
-        }
+        log.info("Received classMap from frontend, but it will be ignored as per backend logic: {}", classMapJson);
 
         User currentUser = userService.getLoginUser(request);
-        List<ImageVO> resultVOs = imageService.uploadImagesWithAnnotationsBatch(folderId, classMap, files, currentUser);
+        // 注意：classMap 被忽略，传递一个空 Map
+        List<ImageVO> resultVOs = imageService.uploadImagesWithAnnotationsBatch(folderId, Map.of(), files, currentUser);
         return ResultUtils.success(resultVOs);
     }
 
@@ -239,7 +201,7 @@ public class ImageController {
         }
         User currentUser = userService.getLoginUser(request);
         ImageVO imageVO = imageService.getImageVOByFolderAndName(getRequest, currentUser);
-        // 注意：即使找不到也返回成功，让前端判断data是否为null
         return ResultUtils.success(imageVO);
     }
 }
+// END OF FILE: src/main/java/com/scy/mytemplate/controller/ImageController.java

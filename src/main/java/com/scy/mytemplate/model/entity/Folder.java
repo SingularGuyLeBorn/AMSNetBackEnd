@@ -32,17 +32,17 @@ public class Folder implements Serializable {
     private String name;
 
     /**
-     * 空间类型: 'public', 'private', 'organization'
+     * 空间类型: 'platform_public', 'organization_public', 'user_public', 'user_private'
      */
     private String space;
 
     /**
-     * 私有文件夹的拥有者用户ID (当 space="private" 时)
+     * 私有/个人公共文件夹的拥有者用户ID
      */
     private String ownerUserId;
 
     /**
-     * 组织文件夹的拥有者组织ID (当 space="organization" 时)
+     * 组织文件夹的拥有者组织ID
      */
     private String ownerOrganizationId;
 
@@ -61,6 +61,16 @@ public class Folder implements Serializable {
      */
     @TableLogic
     private Integer isDelete;
+
+    /**
+     * 合并状态: 'NONE', 'PENDING', 'APPROVED', 'REJECTED'
+     */
+    private String mergeState;
+
+    /**
+     * 请求合并的目标组织ID
+     */
+    private String targetOrganizationId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

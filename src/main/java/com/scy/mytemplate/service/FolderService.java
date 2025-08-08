@@ -2,7 +2,10 @@
 package com.scy.mytemplate.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.scy.mytemplate.model.dto.folder.FolderCopyRequest;
 import com.scy.mytemplate.model.dto.folder.FolderCreateRequest;
+import com.scy.mytemplate.model.dto.folder.FolderMergeRequest;
+import com.scy.mytemplate.model.dto.folder.FolderMergeResponse;
 import com.scy.mytemplate.model.dto.folder.FolderUpdateRequest;
 import com.scy.mytemplate.model.entity.Folder;
 import com.scy.mytemplate.model.entity.User;
@@ -50,5 +53,47 @@ public interface FolderService extends IService<Folder> {
      * @return 文件夹视图对象列表。
      */
     List<FolderVO> listFoldersForCurrentUser(User currentUser);
+
+    /**
+     * 复制一个文件夹及其所有内容到当前用户的个人空间。
+     *
+     * @param request     包含源文件夹ID和目标空间类型
+     * @param currentUser 当前操作的用户
+     * @return 复制后新生成的文件夹视图对象
+     */
+    FolderVO copyFolder(FolderCopyRequest request, User currentUser);
+
+    /**
+     * 用户从个人公共空间发起一个合并文件夹到组织的请求。
+     *
+     * @param request     包含要合并的文件夹ID和目标组织ID
+     * @param currentUser 当前操作的用户
+     */
+    void requestMerge(FolderMergeRequest request, User currentUser);
+
+    /**
+     * 组织管理员获取所有待审批的合并请求列表。
+     *
+     * @param organizationId 组织ID
+     * @param currentUser    当前操作的管理员用户
+     * @return 待合并请求的详细信息列表
+     */
+    List<FolderMergeResponse> listPendingMerges(String organizationId, User currentUser);
+
+    /**
+     * 组织管理员批准一个文件夹合并请求。
+     *
+     * @param folderId    待合并的文件夹ID
+     * @param currentUser 当前操作的管理员用户
+     */
+    void approveMergeRequest(String folderId, User currentUser);
+
+    /**
+     * 组织管理员拒绝一个文件夹合并请求。
+     *
+     * @param folderId    待合并的文件夹ID
+     * @param currentUser 当前操作的管理员用户
+     */
+    void rejectMergeRequest(String folderId, User currentUser);
 }
 // END OF FILE: src/main/java/com/scy/mytemplate/service/FolderService.java

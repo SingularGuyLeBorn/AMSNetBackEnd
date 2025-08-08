@@ -7,6 +7,7 @@ import com.scy.mytemplate.model.entity.User;
 import com.scy.mytemplate.model.vo.NodeVO;
 import com.scy.mytemplate.model.vo.RelationshipVO;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 统一的图服务接口。
@@ -24,6 +25,14 @@ public interface GraphService {
     NodeVO findNode(NodeQueryRequest request, User currentUser);
     List<NodeVO> getAllNodesForCurrentUser(NodeGetAllRequest request, User currentUser);
 
+    /**
+     * 更新知识图谱节点的权限相关属性。
+     *
+     * @param nodeName 节点名称
+     * @param newPermissionProperties 新的权限属性Map (e.g., space, ownerOrganizationId)
+     */
+    void updateNodePermissions(String nodeName, Map<String, Object> newPermissionProperties);
+
     // endregion
 
     // region 关系操作 (Relationship Operations)
@@ -33,6 +42,12 @@ public interface GraphService {
     String updateRelationship(RelationshipUpdateRequest request, User currentUser);
     RelationshipVO findRelationship(RelationshipQueryRequest request, User currentUser);
     List<RelationshipVO> getAllRelationshipsForCurrentUser(RelationshipGetAllRequest request, User currentUser);
+
+    /**
+     * 触发自动化关系创建的逻辑。
+     * @param nodeName 刚刚被创建或更新的节点名称
+     */
+    void triggerAutoRelationshipCreation(String nodeName);
 
     // endregion
 }

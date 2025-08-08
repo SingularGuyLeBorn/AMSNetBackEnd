@@ -12,6 +12,7 @@ import com.scy.mytemplate.model.entity.User;
 import com.scy.mytemplate.model.enums.PermissionEnum;
 import com.scy.mytemplate.model.enums.UserRoleEnum;
 import com.scy.mytemplate.service.PermissionService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -64,31 +65,47 @@ public class PermissionServiceImpl implements PermissionService {
         }
 
         switch (folder.getSpace()) {
-            case "public":
-                // 公共空间：所有人可读，但只有平台管理员可写（已在上一层处理）
+            case "platform_public":
+                // 平台公共空间：所有人可读，但只有平台管理员可写（已在上一层管理员判断中处理）
                 if (requiredPermission == PermissionEnum.WRITE) {
-                    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权修改公共空间内容");
+                    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权修改平台公共空间内容");
                 }
                 break;
-            case "organization":
+            case "organization_public":
                 String orgId = folder.getOwnerOrganizationId();
                 String roleInOrg = memberMapper.findUserRoleInOrg(user.getId(), orgId);
                 if (roleInOrg == null) {
                     throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您不属于该组织，无权访问");
                 }
-                // 组织空间：组织成员可读，但只有组织管理员可写
+                // 组织公共空间：组织成员可读，但只有组织管理员可写
                 if (requiredPermission == PermissionEnum.WRITE && !"admin".equals(roleInOrg)) {
                     throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您不是组织管理员，无权修改此内容");
                 }
                 break;
-            case "private":
-                // 私人空间：只有文件夹拥有者有全部权限
+            case "user_public":
+            case "user_private":
+                // 个人空间（公共/私有）：只有文件夹拥有者有全部权限
                 if (!folder.getOwnerUserId().equals(user.getId())) {
-                    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权访问他人的私人空间");
+                    throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权访问他人的个人空间");
                 }
                 break;
             default:
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "未知的空间类型，权限检查失败");
+        }
+    }
+
+    @Override
+    public void checkOrganizationAdmin(String organizationId, User user) {
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 平台管理员也是任何组织的隐式管理员
+        if (UserRoleEnum.ADMIN.getValue().equals(user.getUserRole())) {
+            return;
+        }
+        String roleInOrg = memberMapper.findUserRoleInOrg(user.getId(), organizationId);
+        if (!"admin".equals(roleInOrg)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您不是该组织的管理员");
         }
     }
 }

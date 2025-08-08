@@ -20,6 +20,7 @@ import com.scy.mytemplate.service.AnnotationService;
 import com.scy.mytemplate.service.PermissionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
+    @Transactional
     public AnnotationVO createAnnotation(AnnotationCreateRequest request, User currentUser) {
         String imageId = request.getImageId();
         Image image = imageMapper.selectById(imageId);
@@ -79,7 +81,8 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     public AnnotationVO getAnnotationByImageId(String imageId, User currentUser) {
         Image image = imageMapper.selectById(imageId);
         if (image == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "关联的图片不存在");
+            // 在前端导航时，可能会请求一个已被删除的图片的标注，这不应是错误，而是返回空数据
+            return null;
         }
         // 权限检查：必须对图片有读权限才能查看其标注
         permissionService.checkNodePermission(image.getStoragePath(), currentUser, PermissionEnum.READ);
@@ -92,6 +95,7 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     }
 
     @Override
+    @Transactional
     public AnnotationVO updateAnnotation(AnnotationUpdateRequest request, User currentUser) {
         String annotationId = request.getAnnotationId();
         Annotation annotation = this.getById(annotationId);
@@ -119,10 +123,12 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
     }
 
     @Override
+    @Transactional
     public void deleteAnnotation(String annotationId, User currentUser) {
         Annotation annotation = this.getById(annotationId);
         if (annotation == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "要删除的标注记录不存在");
+            // 如果不存在，可能已被删除，幂等处理
+            return;
         }
 
         Image image = imageMapper.selectById(annotation.getImageId());
@@ -134,9 +140,6 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
             permissionService.checkNodePermission(image.getStoragePath(), currentUser, PermissionEnum.WRITE);
         }
 
-        // 标注数据是逻辑删除还是物理删除取决于业务需求。
-        // 此处采用物理删除，因为标注与图片强绑定，通常随图片走。
-        // 如果需要逻辑删除，请为 Annotation 实体添加 @TableLogic 字段并使用 this.removeById()。
         int deletedRows = annotationMapper.deleteById(annotationId);
         if (deletedRows == 0) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除标注失败，数据库错误");
@@ -151,6 +154,9 @@ public class AnnotationServiceImpl extends ServiceImpl<AnnotationMapper, Annotat
      */
     private String serializeJsonContent(Map<String, Object> content) {
         try {
+            if (content == null) {
+                return "{}";
+            }
             return objectMapper.writeValueAsString(content);
         } catch (JsonProcessingException e) {
             log.error("JSON 序列化失败", e);

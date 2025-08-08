@@ -1,3 +1,4 @@
+// FILE: src/main/java/com/scy/mytemplate/annotation/AuthCheck.java
 package com.scy.mytemplate.annotation;
 
 import java.lang.annotation.ElementType;
@@ -6,12 +7,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 权限校验
+ * 权限校验注解
  *
  * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.TYPE, ElementType.METHOD}) // **核心修正**: 新增 ElementType.TYPE，允许注解作用于类级别
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AuthCheck {
 
@@ -23,4 +24,4 @@ public @interface AuthCheck {
     String mustRole() default "";
 
 }
-
+// END OF FILE: src/main/java/com/scy/mytemplate/annotation/AuthCheck.java

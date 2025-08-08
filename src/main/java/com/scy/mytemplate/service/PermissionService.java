@@ -32,5 +32,14 @@ public interface PermissionService {
      * @throws com.scy.mytemplate.exception.BusinessException 如果用户无权执行操作。
      */
     void checkFolderPermission(Folder folder, User user, PermissionEnum requiredPermission);
+
+    /**
+     * 检查用户是否是指定组织的管理员。
+     *
+     * @param organizationId 组织ID
+     * @param user           当前用户
+     * @throws com.scy.mytemplate.exception.BusinessException 如果用户不是该组织的管理员。
+     */
+    void checkOrganizationAdmin(String organizationId, User user);
 }
 // END OF FILE: src/main/java/com/scy/mytemplate/service/PermissionService.java

@@ -5,9 +5,7 @@ import com.scy.mytemplate.common.BaseResponse;
 import com.scy.mytemplate.common.ErrorCode;
 import com.scy.mytemplate.common.ResultUtils;
 import com.scy.mytemplate.exception.BusinessException;
-import com.scy.mytemplate.model.dto.folder.FolderCreateRequest;
-import com.scy.mytemplate.model.dto.folder.FolderDeleteRequest;
-import com.scy.mytemplate.model.dto.folder.FolderUpdateRequest;
+import com.scy.mytemplate.model.dto.folder.*;
 import com.scy.mytemplate.model.entity.User;
 import com.scy.mytemplate.model.vo.FolderVO;
 import com.scy.mytemplate.service.FolderService;
@@ -86,6 +84,28 @@ public class FolderController {
         User currentUser = userService.getLoginUser(request);
         List<FolderVO> folderList = folderService.listFoldersForCurrentUser(currentUser);
         return ResultUtils.success(folderList);
+    }
+
+    /**
+     * 复制文件夹
+     */
+    @PostMapping("/copy")
+    @ApiOperation(value = "复制文件夹到个人空间")
+    public BaseResponse<FolderVO> copyFolder(@RequestBody FolderCopyRequest copyRequest, HttpServletRequest request) {
+        User currentUser = userService.getLoginUser(request);
+        FolderVO newFolderVO = folderService.copyFolder(copyRequest, currentUser);
+        return ResultUtils.success(newFolderVO);
+    }
+
+    /**
+     * 请求合并文件夹
+     */
+    @PostMapping("/merge/request")
+    @ApiOperation(value = "请求将个人公共文件夹合并到组织")
+    public BaseResponse<Boolean> requestMerge(@RequestBody FolderMergeRequest mergeRequest, HttpServletRequest request) {
+        User currentUser = userService.getLoginUser(request);
+        folderService.requestMerge(mergeRequest, currentUser);
+        return ResultUtils.success(true);
     }
 }
 // END OF FILE: src/main/java/com/scy/mytemplate/controller/FolderController.java
